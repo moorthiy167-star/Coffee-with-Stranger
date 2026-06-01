@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Coffee With Stranger | Meet Someone New Over Coffee — Bengaluru</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  :root {
+    --espresso: #1a0a00;
+    --roast: #3d1f00;
+    --caramel: #c47c2b;
+    --cream: #f9f3e8;
+    --foam: #fdf8f0;
+    --steam: #e8dcc8;
+    --text: #1a0a00;
+    --muted: #6b5240;
+    --success: #2d7a4f;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'DM Sans',sans-serif;background:var(--foam);color:var(--text);overflow-x:hidden;}
+
+  /* NAV */
+  nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(253,248,240,0.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--steam);padding:0 2rem;}
+  .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .nav-logo{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--espresso);text-decoration:none;display:flex;align-items:center;gap:8px;}
+  .nav-logo span{font-size:1.4rem;}
+  .nav-links{display:flex;gap:1.5rem;align-items:center;}
+  .nav-links a{text-decoration:none;color:var(--muted);font-size:0.9rem;font-weight:500;transition:color 0.2s;}
+  .nav-links a:hover{color:var(--caramel);}
+  .nav-cta{background:var(--espresso);color:var(--cream)!important;padding:8px 20px;border-radius:50px;font-size:0.85rem!important;}
+  .nav-cta:hover{background:var(--roast)!important;color:var(--cream)!important;}
+
+  /* HERO */
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#1a0a00 0%,#3d1f00 40%,#6b3a1a 70%,#c47c2b 100%);}
+  .hero-bg{position:absolute;inset:0;opacity:0.06;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+  .hero-content{position:relative;z-index:1;max-width:700px;}
+  .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(196,124,43,0.3);border:1px solid rgba(196,124,43,0.5);color:#f5d49a;padding:6px 16px;border-radius:50px;font-size:0.8rem;font-weight:500;letter-spacing:0.5px;margin-bottom:1.5rem;}
+  .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,6vw,4.5rem);color:#fdf8f0;line-height:1.15;margin-bottom:1.5rem;}
+  .hero h1 em{color:#f5c267;font-style:italic;}
+  .hero p{font-size:1.15rem;color:#c8b49a;max-width:500px;margin:0 auto 2.5rem;line-height:1.7;}
+  .hero-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+  .btn-primary{background:var(--caramel);color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:1rem;border:none;cursor:pointer;transition:all 0.2s;display:inline-block;}
+  .btn-primary:hover{background:#a8661f;transform:translateY(-1px);}
+  .btn-outline{background:transparent;color:#fdf8f0;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:500;font-size:1rem;border:1.5px solid rgba(253,248,240,0.4);cursor:pointer;transition:all 0.2s;display:inline-block;}
+  .btn-outline:hover{border-color:#fdf8f0;background:rgba(253,248,240,0.08);}
+  .hero-stats{display:flex;gap:2.5rem;justify-content:center;margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid rgba(253,248,240,0.15);}
+  .stat{text-align:center;}
+  .stat-num{font-family:'Playfair Display',serif;font-size:1.8rem;color:#f5c267;font-weight:700;}
+  .stat-label{font-size:0.8rem;color:#c8b49a;margin-top:2px;}
+
+  /* SECTIONS */
+  section{padding:5rem 2rem;}
+  .container{max-width:1100px;margin:0 auto;}
+  .section-tag{display:inline-block;background:var(--steam);color:var(--muted);font-size:0.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 14px;border-radius:50px;margin-bottom:1rem;}
+  .section-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);color:var(--espresso);margin-bottom:1rem;line-height:1.25;}
+  .section-sub{color:var(--muted);font-size:1.05rem;line-height:1.7;max-width:550px;}
+
+  /* FOUNDER */
+  .founder-section{background:var(--cream);}
+  .founder-card{display:flex;gap:3rem;align-items:center;background:#fff;border-radius:24px;padding:3rem;border:1px solid var(--steam);box-shadow:0 4px 24px rgba(26,10,0,0.06);}
+  .founder-img{width:180px;height:180px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--caramel),var(--roast));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:4rem;color:#fff;}
+  .founder-info h3{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--espresso);margin-bottom:0.3rem;}
+  .founder-role{color:var(--caramel);font-weight:600;font-size:0.9rem;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:1rem;}
+  .founder-bio{color:var(--muted);line-height:1.8;margin-bottom:1.5rem;}
+  .founder-links{display:flex;gap:1rem;}
+  .founder-link{display:inline-flex;align-items:center;gap:6px;color:var(--espresso);text-decoration:none;font-size:0.85rem;font-weight:500;border:1px solid var(--steam);padding:6px 14px;border-radius:50px;transition:all 0.2s;}
+  .founder-link:hover{background:var(--espresso);color:var(--cream);border-color:var(--espresso);}
+  .founder-mission{margin-top:3rem;background:var(--espresso);border-radius:20px;padding:2.5rem;color:var(--cream);}
+  .founder-mission h4{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:1rem;color:#f5c267;}
+  .founder-mission p{color:#c8b49a;line-height:1.8;}
+
+  /* HOW IT WORKS */
+  .how-section{background:var(--foam);}
+  .steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:3rem;}
+  .step-card{background:#fff;border-radius:20px;padding:2rem;border:1px solid var(--steam);position:relative;}
+  .step-num{font-family:'Playfair Display',serif;font-size:3rem;color:var(--steam);font-weight:700;line-height:1;margin-bottom:1rem;}
+  .step-icon{font-size:1.8rem;margin-bottom:0.8rem;}
+  .step-card h4{font-weight:600;color:var(--espresso);margin-bottom:0.5rem;}
+  .step-card p{color:var(--muted);font-size:0.9rem;line-height:1.6;}
+
+  /* SHOPS + QR */
+  .shops-section{background:var(--cream);}
+  .shops-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:2rem;margin-top:3rem;}
+  .shop-card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid var(--steam);transition:box-shadow 0.2s;}
+  .shop-card:hover{box-shadow:0 8px 32px rgba(26,10,0,0.1);}
+  .shop-header{padding:1.5rem;background:linear-gradient(135deg,var(--espresso),var(--roast));color:#fff;position:relative;}
+  .shop-header h3{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:0.3rem;}
+  .shop-header p{font-size:0.85rem;opacity:0.75;}
+  .shop-badge{position:absolute;top:1rem;right:1rem;background:var(--caramel);color:#fff;font-size:0.7rem;font-weight:600;padding:3px 10px;border-radius:50px;letter-spacing:0.5px;}
+  .shop-body{padding:1.5rem;display:flex;gap:1.5rem;align-items:flex-start;}
+  .shop-qr{flex-shrink:0;text-align:center;}
+  .shop-qr canvas, .shop-qr img{border-radius:8px;border:2px solid var(--steam);}
+  .shop-qr p{font-size:0.7rem;color:var(--muted);margin-top:6px;}
+  .shop-details{flex:1;}
+  .shop-detail{display:flex;align-items:center;gap:8px;margin-bottom:0.7rem;font-size:0.88rem;color:var(--muted);}
+  .shop-detail strong{color:var(--espresso);}
+  .shop-detail-icon{font-size:1rem;width:20px;text-align:center;}
+  .shop-slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:1rem;}
+  .slot-pill{font-size:0.75rem;padding:4px 12px;border-radius:50px;border:1px solid var(--steam);color:var(--muted);background:var(--foam);}
+  .slot-pill.available{background:#e8f5ee;border-color:#a8d5b8;color:#2d7a4f;}
+  .shop-footer{padding:1rem 1.5rem;border-top:1px solid var(--steam);display:flex;justify-content:space-between;align-items:center;}
+  .book-btn{background:var(--espresso);color:#fff;border:none;padding:8px 20px;border-radius:50px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .book-btn:hover{background:var(--caramel);}
+  .shop-price{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--espresso);font-weight:700;}
+
+  /* QR REGISTER MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,10,0,0.7);z-index:200;align-items:center;justify-content:center;padding:1rem;}
+  .modal-overlay.active{display:flex;}
+  .modal{background:#fff;border-radius:24px;padding:2.5rem;max-width:480px;width:100%;position:relative;max-height:90vh;overflow-y:auto;}
+  .modal-close{position:absolute;top:1rem;right:1rem;background:var(--steam);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+  .modal h3{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--espresso);margin-bottom:0.3rem;}
+  .modal .shop-name-badge{background:var(--foam);border:1px solid var(--steam);color:var(--caramel);font-weight:600;font-size:0.82rem;padding:4px 12px;border-radius:50px;display:inline-block;margin-bottom:1.2rem;}
+  .form-group{margin-bottom:1.2rem;}
+  .form-group label{display:block;font-size:0.85rem;font-weight:600;color:var(--espresso);margin-bottom:0.4rem;}
+  .form-group input, .form-group select, .form-group textarea{width:100%;padding:10px 14px;border:1.5px solid var(--steam);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--text);background:var(--foam);outline:none;transition:border-color 0.2s;}
+  .form-group input:focus, .form-group select:focus{border-color:var(--caramel);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .gender-opts{display:flex;gap:0.8rem;}
+  .gender-opt{flex:1;}
+  .gender-opt input{display:none;}
+  .gender-opt label{display:block;text-align:center;padding:8px;border:1.5px solid var(--steam);border-radius:10px;cursor:pointer;font-size:0.85rem;color:var(--muted);transition:all 0.2s;}
+  .gender-opt input:checked + label{border-color:var(--caramel);background:#fdf3e4;color:var(--caramel);font-weight:600;}
+  .form-submit{width:100%;background:var(--espresso);color:#fff;border:none;padding:14px;border-radius:50px;font-size:1rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.2s;margin-top:0.5rem;}
+  .form-submit:hover{background:var(--caramel);}
+  .success-msg{text-align:center;padding:1.5rem 0;}
+  .success-icon{font-size:3rem;margin-bottom:1rem;}
+  .success-msg h4{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--success);margin-bottom:0.5rem;}
+  .success-msg p{color:var(--muted);font-size:0.9rem;}
+
+  /* PAYMENT */
+  .payment-section{background:var(--foam);}
+  .payment-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:3rem;align-items:start;margin-top:3rem;}
+  .plan-card{background:#fff;border-radius:20px;padding:2rem;border:2px solid var(--caramel);position:relative;overflow:hidden;}
+  .plan-card::before{content:'Most Popular';position:absolute;top:1.2rem;right:-1.5rem;background:var(--caramel);color:#fff;font-size:0.7rem;font-weight:700;padding:4px 20px;transform:rotate(12deg);letter-spacing:0.5px;}
+  .plan-price{font-family:'Playfair Display',serif;font-size:3rem;color:var(--espresso);font-weight:700;line-height:1;}
+  .plan-price sup{font-size:1.2rem;vertical-align:top;margin-top:0.5rem;display:inline-block;}
+  .plan-period{color:var(--muted);font-size:0.9rem;margin-top:0.5rem;}
+  .plan-features{list-style:none;margin:1.5rem 0;display:flex;flex-direction:column;gap:0.8rem;}
+  .plan-features li{display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--muted);}
+  .plan-features li::before{content:'✓';color:var(--success);font-weight:700;font-size:1rem;}
+  .payment-form-card{background:#fff;border-radius:20px;padding:2rem;border:1px solid var(--steam);}
+  .payment-form-card h4{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--espresso);margin-bottom:1.5rem;}
+  .payment-methods{display:flex;gap:0.8rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .pay-method{border:1.5px solid var(--steam);border-radius:10px;padding:8px 16px;cursor:pointer;font-size:0.85rem;color:var(--muted);transition:all 0.2s;background:var(--foam);}
+  .pay-method.selected{border-color:var(--caramel);background:#fdf3e4;color:var(--caramel);font-weight:600;}
+  .card-row{display:grid;grid-template-columns:2fr 1fr;gap:0.8rem;}
+  .secure-note{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--muted);margin-top:1rem;}
+  .secure-note::before{content:'🔒';font-size:0.9rem;}
+  .upi-section, .netbanking-section{display:none;}
+  .upi-section.active, .netbanking-section.active{display:block;}
+  .banks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-top:0.8rem;}
+  .bank-btn{border:1.5px solid var(--steam);border-radius:8px;padding:8px 6px;text-align:center;cursor:pointer;font-size:0.72rem;color:var(--muted);background:var(--foam);transition:all 0.2s;}
+  .bank-btn:hover{border-color:var(--caramel);}
+
+  /* TESTIMONIALS */
+  .testimonials-section{background:var(--cream);}
+  .testimonials-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.5rem;margin-top:3rem;}
+  .testimonial-card{background:#fff;border-radius:20px;padding:1.8rem;border:1px solid var(--steam);}
+  .stars{color:var(--caramel);font-size:0.9rem;margin-bottom:1rem;}
+  .testimonial-text{color:var(--muted);font-size:0.93rem;line-height:1.7;margin-bottom:1.2rem;font-style:italic;}
+  .testimonial-author{display:flex;align-items:center;gap:10px;}
+  .author-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--caramel),var(--roast));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:0.85rem;flex-shrink:0;}
+  .author-name{font-weight:600;font-size:0.88rem;color:var(--espresso);}
+  .author-meta{font-size:0.78rem;color:var(--muted);}
+
+  /* LIST YOUR CAFE */
+  .list-section{background:var(--espresso);}
+  .list-section .section-tag{background:rgba(196,124,43,0.3);color:#f5c267;}
+  .list-section .section-title{color:#fdf8f0;}
+  .list-section .section-sub{color:#c8b49a;}
+  .list-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:3rem;align-items:start;margin-top:3rem;}
+  .list-benefits{display:flex;flex-direction:column;gap:1rem;}
+  .list-benefit{display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.2rem;}
+  .list-benefit-icon{font-size:1.6rem;flex-shrink:0;}
+  .list-benefit h4{color:#f5c267;font-weight:600;font-size:0.95rem;margin-bottom:0.2rem;}
+  .list-benefit p{color:#c8b49a;font-size:0.85rem;line-height:1.5;}
+  .list-form-card{background:#fff;border-radius:20px;padding:2rem;}
+  .list-form-card h4{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--espresso);margin-bottom:0.3rem;}
+  .list-form-card p{color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;}
+  @media(max-width:768px){.list-grid{grid-template-columns:1fr;}}
+
+  /* SAFETY */
+  .safety-section{background:var(--foam);}
+  .safety-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;margin-top:3rem;}
+  .safety-card{background:#fff;border-radius:20px;padding:1.8rem;border:1px solid var(--steam);display:flex;gap:1rem;}
+  .safety-icon{width:44px;height:44px;border-radius:12px;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+  .safety-text h4{font-weight:600;color:var(--espresso);margin-bottom:0.3rem;font-size:0.95rem;}
+  .safety-text p{color:var(--muted);font-size:0.85rem;line-height:1.6;}
+
+  /* FAQ */
+  .faq-section{background:var(--cream);}
+  .faq-list{margin-top:3rem;max-width:720px;}
+  .faq-item{border:1px solid var(--steam);border-radius:14px;margin-bottom:0.8rem;overflow:hidden;background:#fff;}
+  .faq-q{padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:500;color:var(--espresso);}
+  .faq-q::after{content:'+';font-size:1.4rem;color:var(--caramel);transition:transform 0.2s;}
+  .faq-item.open .faq-q::after{transform:rotate(45deg);}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height 0.3s ease;padding:0 1.5rem;color:var(--muted);font-size:0.9rem;line-height:1.7;}
+  .faq-item.open .faq-a{max-height:200px;padding:0 1.5rem 1.2rem;}
+
+  /* FOOTER */
+  footer{background:var(--espresso);color:var(--cream);padding:3rem 2rem 2rem;}
+  .footer-inner{max-width:1100px;margin:0 auto;}
+  .footer-top{display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;padding-bottom:2rem;border-bottom:1px solid rgba(253,248,240,0.1);}
+  .footer-brand h3{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:0.8rem;}
+  .footer-brand p{color:#c8b49a;font-size:0.88rem;line-height:1.7;}
+  .footer-col h5{font-weight:600;margin-bottom:1rem;color:#f5c267;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;}
+  .footer-col a{display:block;color:#c8b49a;text-decoration:none;font-size:0.88rem;margin-bottom:0.6rem;transition:color 0.2s;}
+  .footer-col a:hover{color:var(--caramel);}
+  .footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:1.5rem;font-size:0.82rem;color:#c8b49a;flex-wrap:wrap;gap:1rem;}
+  .footer-made{display:flex;align-items:center;gap:6px;}
+
+  /* MOBILE */
+  @media(max-width:768px){
+    .nav-links{display:none;}
+    .founder-card{flex-direction:column;text-align:center;}
+    .payment-grid{grid-template-columns:1fr;}
+    .footer-top{grid-template-columns:1fr;}
+    .hero-stats{gap:1.5rem;}
+    .shop-body{flex-direction:column;}
+  }
+  @media(max-width:480px){
+    .form-row{grid-template-columns:1fr;}
+    .hero h1{font-size:2rem;}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo"><span>☕</span> Coffee With Stranger</a>
+    <div class="nav-links">
+      <a href="#how">How It Works</a>
+      <a href="#cafes">Cafés & QR</a>
+      <a href="#founder">About</a>
+      <a href="#list-cafe">List Your Café</a>
+      <a href="#payment" class="nav-cta">Book Now</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">☕ Bengaluru's Newest Social Experience — Launching Now</div>
+    <h1>One Coffee.<br/><em>One Stranger.</em><br/>Endless Possibilities.</h1>
+    <p>Break the doom-scroll. Meet a real human being over a cup of coffee. No algorithms, no swipes — just two people and a real conversation.</p>
+    <div class="hero-buttons">
+      <a href="#cafes" class="btn-primary">Find a Venue & Register</a>
+      <a href="#how" class="btn-outline">How It Works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">🚀</div><div class="stat-label">Launching 2025</div></div>
+      <div class="stat"><div class="stat-num">BLR</div><div class="stat-label">Starting in Bengaluru</div></div>
+      <div class="stat"><div class="stat-num">₹399</div><div class="stat-label">Per Session</div></div>
+      <div class="stat"><div class="stat-num">∞</div><div class="stat-label">Conversations Waiting</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDER -->
+<section class="founder-section" id="founder">
+  <div class="container">
+    <span class="section-tag">The Founder</span>
+    <h2 class="section-title">The Person Behind the Platform.</h2>
+
+    <div class="founder-card">
+      <div class="founder-img">M</div>
+      <div class="founder-info">
+        <h3>Moorthi R</h3>
+        <div class="founder-role">Founder & CEO, Coffee With Stranger</div>
+        <p class="founder-bio">Moorthi R is the founder of Coffee With Stranger — a platform born from a simple belief: that the best conversations happen face to face, not on a screen. He started this initiative in Bengaluru in 2025 to make it easier for people to step out, meet someone new, and build real connections over a cup of coffee. His vision is to take this experience to every city in India.</p>
+        <div class="founder-links">
+          <a href="tel:+919741239979" class="founder-link">📞 97412 39979</a>
+          <a href="mailto:coffeewithstranger2024@gmail.com" class="founder-link">✉ coffeewithstranger2024@gmail.com</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="founder-mission">
+      <h4>💬 A Note From the Founder</h4>
+      <p>"In a city of millions, it is still possible to feel completely alone. Coffee With Stranger exists to change that — one honest conversation at a time. We don't need more followers. We need more face-to-face moments."</p>
+      <p style="margin-top:1rem;color:#f5c267;font-size:0.88rem;font-weight:500;">— Moorthi R, Founder</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="container">
+    <span class="section-tag">The Process</span>
+    <h2 class="section-title">Simple as a Cup of Coffee.</h2>
+    <p class="section-sub">No lengthy profiles. No endless waiting. Just five simple steps to a real conversation with someone new.</p>
+
+    <!-- TIMING BANNER -->
+    <div style="background:var(--espresso);border-radius:16px;padding:1.2rem 2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div style="font-size:2rem;">⏱️</div>
+      <div>
+        <h4 style="color:#f5c267;font-size:1rem;margin-bottom:0.2rem;">Session Duration: 30 to 40 Minutes</h4>
+        <p style="color:#c8b49a;font-size:0.85rem;">Your reserved table time is <strong style="color:#fff">30–40 minutes</strong>. After that, you are free to continue your conversation, order food or more drinks, and stay as long as you like — at your own expense.</p>
+      </div>
+    </div>
+
+    <div class="steps-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon">📍</div>
+        <h4>Pick a Café</h4>
+        <p>Choose a partner café near you and scan their unique QR code to register your profile for that venue.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon">💳</div>
+        <h4>Pay ₹349</h4>
+        <p>One session fee. Covers your match, a coffee coupon worth ₹100, coordination and on-ground support.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon">🎟️</div>
+        <h4>Get Your Coffee Coupon</h4>
+        <p>After payment you instantly receive a <strong>₹100 coupon</strong> on your email. Show it at the café to redeem one free coffee or beverage.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-icon">🤝</div>
+        <h4>Get Matched</h4>
+        <p>Our team pairs you with the most interesting person registered at the same café and time slot.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">05</div>
+        <div class="step-icon">☕</div>
+        <h4>Show Up & Talk</h4>
+        <p>Walk in, redeem your coupon, enjoy a 30–40 min conversation. Loved it? Stay longer and order more on your own!</p>
+      </div>
+    </div>
+
+    <!-- COUPON EXPLAINER -->
+    <div style="margin-top:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
+      <div style="background:#fff;border:1.5px dashed var(--caramel);border-radius:16px;padding:1.5rem;display:flex;gap:1rem;align-items:flex-start;">
+        <div style="font-size:1.8rem;">🎟️</div>
+        <div>
+          <h4 style="color:var(--espresso);font-size:0.95rem;margin-bottom:0.3rem;">For You — The Customer</h4>
+          <p style="color:var(--muted);font-size:0.85rem;line-height:1.6;">Pay ₹349. Get a ₹100 coffee coupon sent to your email. Walk in, redeem, meet someone new. Simple.</p>
+        </div>
+      </div>
+      <div style="background:#fff;border:1.5px dashed var(--caramel);border-radius:16px;padding:1.5rem;display:flex;gap:1rem;align-items:flex-start;">
+        <div style="font-size:1.8rem;">🏪</div>
+        <div>
+          <h4 style="color:var(--espresso);font-size:0.95rem;margin-bottom:0.3rem;">For the Café Owner</h4>
+          <p style="color:var(--muted);font-size:0.85rem;line-height:1.6;">Every CWS session brings 2 customers with a ₹100 coupon each — guaranteed ₹200 minimum spend, plus extra orders if they stay longer.</p>
+        </div>
+      </div>
+      <div style="background:#fff;border:1.5px dashed var(--caramel);border-radius:16px;padding:1.5rem;display:flex;gap:1rem;align-items:flex-start;">
+        <div style="font-size:1.8rem;">⏱️</div>
+        <div>
+          <h4 style="color:var(--espresso);font-size:0.95rem;margin-bottom:0.3rem;">Respectful of Everyone's Time</h4>
+          <p style="color:var(--muted);font-size:0.85rem;line-height:1.6;">The 30–40 min window keeps the table moving for the café. If you want to stay longer — great! Just order more and enjoy.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CAFÉS & QR -->
+<section class="shops-section" id="cafes">
+  <div class="container">
+    <span class="section-tag">Venue Partners</span>
+    <h2 class="section-title">Cafés Coming on Board.<br/>Be Part of the Launch.</h2>
+    <p class="section-sub">We are currently partnering with cafés across Bengaluru. Once a café joins, they get their own QR code and a dedicated listing right here. Want your café featured first?</p>
+
+    <!-- COMING SOON CARDS -->
+    <div class="shops-grid">
+
+      <div class="shop-card" style="opacity:0.75;">
+        <div class="shop-header" style="background:linear-gradient(135deg,#2a2a2a,#4a4a4a)">
+          <div class="shop-badge" style="background:#888">COMING SOON</div>
+          <h3>Indiranagar Area</h3>
+          <p>Bengaluru — Spot Available</p>
+        </div>
+        <div class="shop-body" style="justify-content:center;text-align:center;padding:2.5rem 1.5rem;">
+          <div>
+            <div style="font-size:3rem;margin-bottom:1rem;">📍</div>
+            <p style="color:var(--muted);font-size:0.95rem;line-height:1.7;">We are looking for a café partner in <strong style="color:var(--espresso)">Indiranagar</strong>.<br/>Are you a café owner here?</p>
+            <a href="#list-cafe" style="display:inline-block;margin-top:1.2rem;background:var(--espresso);color:#fff;padding:8px 22px;border-radius:50px;text-decoration:none;font-size:0.85rem;font-weight:600;">Partner With Us →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="shop-card" style="opacity:0.75;">
+        <div class="shop-header" style="background:linear-gradient(135deg,#2a2a2a,#4a4a4a)">
+          <div class="shop-badge" style="background:#888">COMING SOON</div>
+          <h3>Koramangala Area</h3>
+          <p>Bengaluru — Spot Available</p>
+        </div>
+        <div class="shop-body" style="justify-content:center;text-align:center;padding:2.5rem 1.5rem;">
+          <div>
+            <div style="font-size:3rem;margin-bottom:1rem;">📍</div>
+            <p style="color:var(--muted);font-size:0.95rem;line-height:1.7;">We are looking for a café partner in <strong style="color:var(--espresso)">Koramangala</strong>.<br/>Are you a café owner here?</p>
+            <a href="#list-cafe" style="display:inline-block;margin-top:1.2rem;background:var(--espresso);color:#fff;padding:8px 22px;border-radius:50px;text-decoration:none;font-size:0.85rem;font-weight:600;">Partner With Us →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="shop-card" style="opacity:0.75;">
+        <div class="shop-header" style="background:linear-gradient(135deg,#2a2a2a,#4a4a4a)">
+          <div class="shop-badge" style="background:#888">COMING SOON</div>
+          <h3>Whitefield Area</h3>
+          <p>Bengaluru — Spot Available</p>
+        </div>
+        <div class="shop-body" style="justify-content:center;text-align:center;padding:2.5rem 1.5rem;">
+          <div>
+            <div style="font-size:3rem;margin-bottom:1rem;">📍</div>
+            <p style="color:var(--muted);font-size:0.95rem;line-height:1.7;">We are looking for a café partner in <strong style="color:var(--espresso)">Whitefield</strong>.<br/>Are you a café owner here?</p>
+            <a href="#list-cafe" style="display:inline-block;margin-top:1.2rem;background:var(--espresso);color:#fff;padding:8px 22px;border-radius:50px;text-decoration:none;font-size:0.85rem;font-weight:600;">Partner With Us →</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- EARLY REGISTER BANNER -->
+    <div style="margin-top:2.5rem;background:var(--espresso);border-radius:20px;padding:2rem 2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <h4 style="font-family:'Playfair Display',serif;color:#f5c267;font-size:1.3rem;margin-bottom:0.4rem;">Be First in Line 🎉</h4>
+        <p style="color:#c8b49a;font-size:0.9rem;">Register your interest now. We'll notify you the moment a café in your area goes live.</p>
+      </div>
+      <button class="btn-primary" onclick="openBooking('Early Interest')">Register My Interest</button>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING / REGISTRATION MODAL -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeBooking()">✕</button>
+    <h3>Create Your Profile</h3>
+    <div class="shop-name-badge" id="modalShopName">Indiranagar Café</div>
+
+    <div id="bookingFormWrap">
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" placeholder="Arjun" id="fname"/>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" placeholder="Sharma" id="lname"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" placeholder="arjun@example.com" id="email"/>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" placeholder="+91 98765 43210" id="phone"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Age</label>
+          <input type="number" placeholder="26" min="18" max="60" id="age"/>
+        </div>
+        <div class="form-group">
+          <label>Profession</label>
+          <input type="text" placeholder="Software Engineer" id="profession"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Gender</label>
+        <div class="gender-opts">
+          <div class="gender-opt"><input type="radio" name="gender" id="gm" value="male"/><label for="gm">Male</label></div>
+          <div class="gender-opt"><input type="radio" name="gender" id="gf" value="female"/><label for="gf">Female</label></div>
+          <div class="gender-opt"><input type="radio" name="gender" id="go" value="other"/><label for="go">Other</label></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Preferred Time Slot</label>
+        <select id="slot">
+          <option>Morning (8 AM – 11 AM)</option>
+          <option>Afternoon (12 PM – 3 PM)</option>
+          <option>Evening (4 PM – 7 PM)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>What brings you here? <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <textarea placeholder="I want to meet interesting people, expand my circle..." style="height:70px;resize:none;" id="intro"></textarea>
+      </div>
+      <button class="form-submit" onclick="submitBooking()">Continue to Payment →</button>
+    </div>
+
+    <div id="bookingSuccess" class="success-msg" style="display:none">
+      <div class="success-icon">🎉</div>
+      <h4>You're Registered!</h4>
+      <p id="successText">Your profile for <strong></strong> has been created. We'll match you and send details to your email before your slot.</p>
+      <div style="margin-top:1rem;padding:1rem;background:#fdf3e4;border:1.5px dashed var(--caramel);border-radius:12px;font-size:0.85rem;color:var(--muted);">
+        🎟️ Your <strong style="color:var(--espresso)">₹100 Coffee Coupon</strong> will be sent to your email after payment. Show it at the café to redeem your free coffee!
+      </div>
+      <div style="margin-top:0.8rem;padding:1rem;background:var(--foam);border-radius:12px;font-size:0.85rem;color:var(--muted)">
+        ⏱️ Your session is <strong style="color:var(--espresso)">30–40 minutes</strong>. Show up 5 minutes early. Be yourself. That's all.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT -->
+<section class="payment-section" id="payment">
+  <div class="container">
+    <span class="section-tag">Session Booking & Payment</span>
+    <h2 class="section-title">₹349. One Session.<br/>One Coffee. One Stranger.</h2>
+
+    <div class="payment-grid">
+      <div>
+        <div class="plan-card">
+          <div class="plan-price"><sup>₹</sup>349</div>
+          <div class="plan-period">per person, per session</div>
+
+          <!-- PRICE BREAKDOWN -->
+          <div style="background:var(--foam);border-radius:12px;padding:1rem;margin:1rem 0;font-size:0.85rem;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;color:var(--muted);">
+              <span>Platform fee (Moorthi R)</span><strong style="color:var(--espresso)">₹199</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;color:var(--muted);">
+              <span>☕ Coffee coupon (café credit)</span><strong style="color:var(--success)">₹100</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:var(--muted);">
+              <span>Coordination & support</span><strong style="color:var(--espresso)">₹50</strong>
+            </div>
+            <div style="border-top:1px solid var(--steam);margin-top:0.7rem;padding-top:0.7rem;display:flex;justify-content:space-between;">
+              <strong style="color:var(--espresso)">You Pay</strong><strong style="color:var(--caramel);font-size:1rem;">₹349</strong>
+            </div>
+          </div>
+
+          <ul class="plan-features">
+            <li>1 curated stranger meetup</li>
+            <li>🎟️ ₹100 coffee coupon on email</li>
+            <li>30–40 min reserved session</li>
+            <li>Verified profile match</li>
+            <li>Safe public café environment</li>
+            <li>Support team on standby</li>
+            <li>Rebook at ₹299 next time</li>
+          </ul>
+          <button class="btn-primary" style="width:100%;text-align:center;border:none;font-size:0.95rem;" onclick="document.getElementById('paymentForm').scrollIntoView({behavior:'smooth'})">Pay ₹349 & Book Now</button>
+        </div>
+        <div style="margin-top:1rem;background:var(--foam);border:1px solid var(--steam);border-radius:14px;padding:1rem 1.2rem;font-size:0.85rem;color:var(--muted);line-height:1.7;">
+          💡 <strong style="color:var(--espresso)">Full Refund</strong> if we can't find a match within 48 hours of your slot.
+        </div>
+      </div>
+
+      <div class="payment-form-card" id="paymentForm">
+        <h4>Complete Your Payment</h4>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">Click below to pay securely via Razorpay — UPI, Card, Net Banking & Wallets all supported.</p>
+
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="pay_name" placeholder="Arjun Sharma"/>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="pay_email" placeholder="arjun@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="pay_phone" placeholder="+91 98765 43210"/>
+        </div>
+
+        <button class="form-submit" style="margin-top:0.5rem" onclick="processPayment()">
+          Pay ₹349 Securely 🔒
+        </button>
+        <div class="secure-note">256-bit SSL encrypted · Powered by Razorpay</div>
+
+        <div id="pay_success" style="display:none;margin-top:1.5rem;text-align:center;padding:1.5rem;background:#e8f5ee;border-radius:14px;">
+          <div style="font-size:2.5rem;margin-bottom:0.5rem;">🎉</div>
+          <h4 style="color:var(--success);font-family:'Playfair Display',serif;margin-bottom:0.4rem;">Payment Successful!</h4>
+          <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.8rem;">Booking confirmed! Check your email for your <strong>₹100 coffee coupon</strong> and match details.</p>
+          <div style="background:#fff;border:1.5px dashed var(--caramel);border-radius:10px;padding:0.8rem;font-size:0.82rem;color:var(--muted);">
+            🎟️ <strong style="color:var(--espresso)">Your ₹100 Coffee Coupon</strong> is on its way to your email.<br/>Show it at the café counter when you arrive to redeem one free coffee or beverage.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section">
+  <div class="container">
+    <span class="section-tag">Our Story</span>
+    <h2 class="section-title">Every Great Story<br/>Starts Somewhere.</h2>
+    <p class="section-sub" style="margin-bottom:3rem;">Coffee With Stranger is just getting started. We don't have a wall of reviews yet — and we're proud of that honesty. The first reviews will come from real people, real conversations, and real moments. That could be you.</p>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card" style="border:2px dashed var(--steam);background:var(--foam);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">✍️</div>
+        <h4 style="font-family:'Playfair Display',serif;color:var(--espresso);margin-bottom:0.5rem;">Your Review Could Be First</h4>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;">Be one of our founding members and help us write the first chapter of this story.</p>
+        <button onclick="openBooking('Early Interest')" style="margin-top:1.2rem;background:var(--espresso);color:#fff;border:none;padding:8px 22px;border-radius:50px;font-size:0.85rem;font-weight:600;cursor:pointer;">Register Interest</button>
+      </div>
+      <div class="testimonial-card" style="border:2px dashed var(--steam);background:var(--foam);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">☕</div>
+        <h4 style="font-family:'Playfair Display',serif;color:var(--espresso);margin-bottom:0.5rem;">Own a Café? Be Our First Partner</h4>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;">Café owners who join now get featured at the top of our venue list — forever.</p>
+        <a href="#list-cafe" style="margin-top:1.2rem;background:var(--caramel);color:#fff;border:none;padding:8px 22px;border-radius:50px;font-size:0.85rem;font-weight:600;text-decoration:none;display:inline-block;">List Your Café</a>
+      </div>
+      <div class="testimonial-card" style="border:2px dashed var(--steam);background:var(--foam);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🌆</div>
+        <h4 style="font-family:'Playfair Display',serif;color:var(--espresso);margin-bottom:0.5rem;">Launching Across Bengaluru</h4>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;">Sessions will go live as soon as our first café partners are confirmed. Stay tuned.</p>
+        <a href="https://wa.me/919741239979" target="_blank" style="margin-top:1.2rem;background:#25D366;color:#fff;border:none;padding:8px 22px;border-radius:50px;font-size:0.85rem;font-weight:600;text-decoration:none;display:inline-block;">💬 WhatsApp Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section class="safety-section">
+  <div class="container">
+    <span class="section-tag">Your Safety</span>
+    <h2 class="section-title">We Take This Seriously.</h2>
+    <div class="safety-grid">
+      <div class="safety-card">
+        <div class="safety-icon">✅</div>
+        <div class="safety-text"><h4>Verified Profiles</h4><p>Every participant submits a phone-verified profile. Anonymous registrations are never accepted.</p></div>
+      </div>
+      <div class="safety-card">
+        <div class="safety-icon">🏠</div>
+        <div class="safety-text"><h4>Public Venues Only</h4><p>All meetups happen in well-lit, busy partner cafés. We never facilitate private meetings.</p></div>
+      </div>
+      <div class="safety-card">
+        <div class="safety-icon">🛡️</div>
+        <div class="safety-text"><h4>Opt-Out Anytime</h4><p>Not feeling the vibe? You can exit a session or cancel without questions. Full refund guaranteed.</p></div>
+      </div>
+      <div class="safety-card">
+        <div class="safety-icon">📞</div>
+        <div class="safety-text">
+          <h4>Live Support</h4>
+          <p>Our team is reachable during all café hours. Reach us anytime:</p>
+          <p style="margin-top:0.6rem;">
+            <a href="https://wa.me/919741239979" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;text-decoration:none;padding:6px 14px;border-radius:50px;font-size:0.8rem;font-weight:600;margin-top:4px;">
+              💬 WhatsApp Us
+            </a>
+          </p>
+          <p style="margin-top:0.6rem;font-size:0.82rem;color:var(--muted);">
+            📞 <a href="tel:+919741239979" style="color:var(--caramel);text-decoration:none;font-weight:600;">+91 97412 39979</a><br/>
+            ✉ <a href="mailto:coffeewithstranger2024@gmail.com" style="color:var(--caramel);text-decoration:none;">coffeewithstranger2024@gmail.com</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container">
+    <span class="section-tag">FAQ</span>
+    <h2 class="section-title">Got Questions?</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Can I choose who I get matched with?</div>
+        <div class="faq-a">You can share your interests, profession, and what you're looking for in a conversation. Our team uses this to find you the most interesting possible match at your chosen café.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Why does each café have a different QR code?</div>
+        <div class="faq-a">The QR ties your registration to a specific venue and time slot — so you're only matched with someone who will actually be sitting in the same café as you. No confusion, no mix-ups.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">What does the ₹399 cover?</div>
+        <div class="faq-a">It covers your match, coordination, and our team's support before and during your session. Your coffee or snacks are ordered separately at the café — that's between you and the menu!</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Is this a dating service?</div>
+        <div class="faq-a">No. Coffee With Stranger is about real human connection — friendships, conversations, and community. All sessions happen in public cafés with verified profiles. Romantic connections are not the goal, though great friendships absolutely are.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">When will sessions actually start?</div>
+        <div class="faq-a">Sessions will begin as soon as our first café partners are confirmed in Bengaluru. Register your interest now and you will be the first to know — and the first to get matched.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIST YOUR CAFÉ -->
+<section class="list-section" id="list-cafe">
+  <div class="container">
+    <span class="section-tag">For Café Owners</span>
+    <h2 class="section-title">Own a Café in Bangalore?<br/>Join Our Network.</h2>
+    <p class="section-sub">We bring verified, conversation-ready customers to your café. No upfront cost. Just more footfall and a great story to tell.</p>
+
+    <div class="list-grid">
+      <div class="list-benefits">
+        <div class="list-benefit">
+          <div class="list-benefit-icon">📈</div>
+          <div>
+            <h4>More Customers, Guaranteed</h4>
+            <p>Every session we run at your café brings in 2 paying customers who stay for at least an hour.</p>
+          </div>
+        </div>
+        <div class="list-benefit">
+          <div class="list-benefit-icon">🎯</div>
+          <div>
+            <h4>Zero Cost to Join</h4>
+            <p>Listing your café is completely free. We earn only from bookings — your café earns from food & drinks.</p>
+          </div>
+        </div>
+        <div class="list-benefit">
+          <div class="list-benefit-icon">📍</div>
+          <div>
+            <h4>Your Own QR Code</h4>
+            <p>Once approved, you get a unique QR code to display. Customers scan it, register, and meet right at your venue.</p>
+          </div>
+        </div>
+        <div class="list-benefit">
+          <div class="list-benefit-icon">🌆</div>
+          <div>
+            <h4>Open to All Bangalore Cafés</h4>
+            <p>Any café, any neighbourhood — Jayanagar, HSR, JP Nagar, MG Road — if you have seating, you qualify.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-form-card">
+        <h4>List Your Café</h4>
+        <p>Fill this in and we'll reach out within 48 hours.</p>
+
+        <div id="listFormWrap">
+          <div class="form-group">
+            <label>Café Name</label>
+            <input type="text" placeholder="The Corner Brew" id="cafeName"/>
+          </div>
+          <div class="form-group">
+            <label>Your Name (Owner / Manager)</label>
+            <input type="text" placeholder="Suresh Kumar" id="ownerName"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" placeholder="+91 98765 43210" id="ownerPhone"/>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" placeholder="cafe@example.com" id="ownerEmail"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Café Address (Area / Landmark)</label>
+            <input type="text" placeholder="5th Block, Koramangala, near Forum Mall" id="cafeAddress"/>
+          </div>
+          <div class="form-group">
+            <label>Opening Hours</label>
+            <input type="text" placeholder="8 AM – 10 PM" id="cafeHours"/>
+          </div>
+          <div class="form-group">
+            <label>Anything else you'd like us to know? <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <textarea placeholder="We have a quiet corner perfect for meetups..." style="height:60px;resize:none;" id="cafeNote"></textarea>
+          </div>
+          <button class="form-submit" onclick="submitCafeListing()">Submit Your Café →</button>
+        </div>
+
+        <div id="listSuccess" style="display:none;text-align:center;padding:2rem 0;">
+          <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
+          <h4 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--success);margin-bottom:0.5rem;">Application Received!</h4>
+          <p style="color:var(--muted);font-size:0.9rem;">We'll contact you at <strong id="listConfirmContact"></strong> within 48 hours to get you set up with your own QR code.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <h3>☕ Coffee With Stranger</h3>
+        <p>A professional networking event platform connecting people through structured, in-person sessions at curated café venues.<br/>Founded 2024 · Bengaluru, India</p>
+        <p style="margin-top:1rem;font-size:0.82rem;">Contact: <a href="mailto:coffeewithstranger2024@gmail.com" style="color:var(--caramel);text-decoration:none">coffeewithstranger2024@gmail.com</a><br/>WhatsApp: <a href="tel:+919741239979" style="color:var(--caramel);text-decoration:none">+91 97412 39979</a></p>
+      </div>
+      <div class="footer-col">
+        <h5>Explore</h5>
+        <a href="#how">How It Works</a>
+        <a href="#cafes">Partner Cafés</a>
+        <a href="#list-cafe">List Your Café</a>
+        <a href="#payment">Pricing</a>
+        <a href="#founder">About Founder</a>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Refund Policy</a>
+        <a href="#">Safety Guidelines</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Coffee With Stranger. All rights reserved.</span>
+      <span class="footer-made">Made with ☕ in Bengaluru by Moorthi R</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Generate QR codes for each café
+const cafes = [
+  { id: 'qr1', name: 'Indiranagar Café', url: 'https://moorthiy167-star.github.io/Coffee-with-Stranger/?cafe=indiranagar&register=1' },
+  { id: 'qr2', name: 'Koramangala Café', url: 'https://moorthiy167-star.github.io/Coffee-with-Stranger/?cafe=koramangala&register=1' },
+  { id: 'qr3', name: 'Whitefield Café', url: 'https://moorthiy167-star.github.io/Coffee-with-Stranger/?cafe=whitefield&register=1' }
+];
+
+window.addEventListener('load', () => {
+  cafes.forEach(c => {
+    new QRCode(document.getElementById(c.id), {
+      text: c.url,
+      width: 100,
+      height: 100,
+      colorDark: '#1a0a00',
+      colorLight: '#fdf8f0',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
+
+  // Check URL for café-specific registration
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('register') === '1') {
+    const cafeParam = params.get('cafe');
+    const cafeMap = { indiranagar: 'Indiranagar Café', koramangala: 'Koramangala Café', whitefield: 'Whitefield Café' };
+    if(cafeParam && cafeMap[cafeParam]) {
+      setTimeout(() => openBooking(cafeMap[cafeParam]), 500);
+    }
+  }
+});
+
+let currentShop = '';
+function openBooking(shop) {
+  currentShop = shop;
+  document.getElementById('modalShopName').textContent = shop;
+  document.getElementById('bookingFormWrap').style.display = 'block';
+  document.getElementById('bookingSuccess').style.display = 'none';
+  document.getElementById('bookingModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeBooking() {
+  document.getElementById('bookingModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+document.getElementById('bookingModal').addEventListener('click', function(e) {
+  if(e.target === this) closeBooking();
+});
+
+function submitBooking() {
+  const fname = document.getElementById('fname').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  if(!fname || !email || !phone) {
+    alert('Please fill in your name, email, and phone to continue.');
+    return;
+  }
+  document.getElementById('bookingFormWrap').style.display = 'none';
+  document.getElementById('bookingSuccess').style.display = 'block';
+  document.getElementById('successText').innerHTML = `Your profile for <strong>${currentShop}</strong> has been created! We'll match you and send confirmation to <strong>${email}</strong> before your slot.`;
+  // Redirect to payment after short delay
+  setTimeout(() => {
+    closeBooking();
+    document.getElementById('payment').scrollIntoView({ behavior: 'smooth' });
+  }, 2500);
+}
+
+function selectPayMethod(el, method) {}
+function formatCard(input) {}
+
+function processPayment() {
+  const name  = document.getElementById('pay_name').value.trim();
+  const email = document.getElementById('pay_email').value.trim();
+  const phone = document.getElementById('pay_phone').value.trim();
+
+  if(!name || !email || !phone) {
+    alert('Please fill in your name, email, and phone number to proceed.');
+    return;
+  }
+
+  const options = {
+    key: 'rzp_test_SpiQKYMzuptIYL',
+    amount: 34900, // ₹349 in paise
+    currency: 'INR',
+    name: 'Coffee With Stranger',
+    description: 'Stranger Meetup Session',
+    image: 'https://moorthiy167-star.github.io/Coffee-with-Stranger/favicon.ico',
+    prefill: {
+      name:  name,
+      email: email,
+      contact: phone
+    },
+    notes: {
+      cafe: currentShop || 'Not selected'
+    },
+    theme: {
+      color: '#1a0a00'
+    },
+    handler: function(response) {
+      document.getElementById('pay_success').style.display = 'block';
+      document.querySelector('#paymentForm .form-submit').style.display = 'none';
+      console.log('Payment ID:', response.razorpay_payment_id);
+    },
+    modal: {
+      ondismiss: function() {
+        console.log('Payment popup closed');
+      }
+    }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.on('payment.failed', function(response) {
+    alert('Payment failed: ' + response.error.description + '\nPlease try again.');
+  });
+  rzp.open();
+}
+
+function submitCafeListing() {
+  const name = document.getElementById('cafeName').value.trim();
+  const phone = document.getElementById('ownerPhone').value.trim();
+  const email = document.getElementById('ownerEmail').value.trim();
+  if(!name || (!phone && !email)) {
+    alert('Please fill in your café name and at least one contact detail.');
+    return;
+  }
+  document.getElementById('listFormWrap').style.display = 'none';
+  document.getElementById('listSuccess').style.display = 'block';
+  document.getElementById('listConfirmContact').textContent = email || phone;
+}
+
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if(!wasOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>
