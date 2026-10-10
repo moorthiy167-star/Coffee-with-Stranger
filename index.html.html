@@ -9,6 +9,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
 :root{
   --roast:#1d130e;
@@ -382,12 +385,17 @@ footer a:hover{color:var(--yellow)}
           <div class="field"><label for="o_owner">Your name</label><input type="text" id="o_owner" required></div>
           <div class="field"><label for="o_phone">Phone</label><input type="tel" id="o_phone" required></div>
         </div>
+        <div class="field"><label for="o_email">Email (optional)</label><input type="email" id="o_email"></div>
         <div class="field"><label for="o_addr">Area and landmark</label><input type="text" id="o_addr" required></div>
         <div class="field"><label for="o_hours">Opening hours</label><input type="text" id="o_hours" placeholder="Example: 8 AM – 10 PM"></div>
         <div class="err" id="ownerErr" role="alert"></div>
         <button class="btn btn-primary" style="width:100%" type="submit">Send request</button>
         <p class="signin-line">We call you within 48 hours.</p>
       </form>
+      <div id="ownerDone" class="hidden" style="margin-top:16px;padding:16px;border-radius:14px;background:#FFF4E0;color:#2A1810">
+        <b>Request received.</b> We will call you within 48 hours. For a faster reply, send it to us on WhatsApp too.
+        <div style="margin-top:12px"><a class="btn btn-yellow btn-sm" id="ownerWa" target="_blank" rel="noopener">Message us on WhatsApp</a></div>
+      </div>
     </div>
   </div>
 </section>
@@ -396,7 +404,7 @@ footer a:hover{color:var(--yellow)}
   <div class="wrap">
     <div class="sec-head"><h2>Built for safe first meetings</h2></div>
     <div class="safety-grid">
-      <div class="safe"><div class="ic">📞</div><h3>Phone-verified profiles</h3><p>Every member registers with a phone number. Anonymous profiles are not accepted.</p></div>
+      <div class="safe"><div class="ic">📞</div><h3>Phone number required</h3><p>Every member registers with a phone number. Anonymous profiles are not accepted.</p></div>
       <div class="safe"><div class="ic">🏪</div><h3>Public cafés only</h3><p>All meetups happen in busy partner cafés. We never arrange private meetings.</p></div>
       <div class="safe"><div class="ic">🤝</div><h3>Both must say yes</h3><p>Nothing is confirmed until both people tap OK. Your phone number stays hidden.</p></div>
       <div class="safe"><div class="ic">🚪</div><h3>Leave any time</h3><p>Not feeling it? Skip a match or walk out. No questions asked.</p></div>
@@ -468,6 +476,7 @@ footer a:hover{color:var(--yellow)}
     <div id="adminLogin">
       <h2>Admin sign in</h2>
       <p style="color:var(--muted);margin-bottom:16px">Only the Coffee With Stranger team can manage cafés.</p>
+      <div class="field" id="a_emailField"><label for="a_email">Admin email</label><input type="email" id="a_email" autocomplete="username"></div>
       <div class="field"><label for="a_pass">Admin password</label><input type="password" id="a_pass" autocomplete="current-password"></div>
       <div class="err" id="adminErr"></div>
       <button class="btn btn-primary" id="adminGo">Sign in</button>
@@ -495,7 +504,7 @@ footer a:hover{color:var(--yellow)}
             </form>
           </div>
           <div class="panel" style="margin-top:20px">
-            <h3>Café requests from owners</h3>
+            <h3 id="reqHead">Café requests from owners</h3>
             <div id="reqList"></div>
           </div>
         </div>
@@ -505,17 +514,15 @@ footer a:hover{color:var(--yellow)}
             <div id="adminCafes"></div>
           </div>
           <div class="panel" style="margin-top:20px">
-            <h3>Test the flow</h3>
-            <p style="font-size:14.5px;color:var(--muted);margin-bottom:12px">Add sample members so you can try matching, the OK button and the check-in without waiting for real sign-ups.</p>
+            <h3>Members</h3>
+            <p style="font-size:14.5px;color:var(--muted);margin-bottom:12px">Download everyone who registered, with phone numbers and emails. Only you can see these.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-ghost btn-sm" id="seedBtn">Add sample members</button>
               <button class="btn btn-ghost btn-sm" id="csvBtn">Download members (CSV)</button>
-              <button class="btn btn-danger btn-sm" id="wipeBtn">Clear all data</button>
             </div>
           </div>
         </div>
       </div>
-      <div class="admin-note">Demo mode: data is saved in this browser only. See the note after the code for how to share data across all devices.</div>
+      <div class="admin-note" id="adminNote"></div>
       <div style="margin-top:14px"><button class="btn btn-ghost btn-sm" id="adminOut">Sign out</button></div>
     </div>
   </div>
@@ -528,8 +535,19 @@ footer a:hover{color:var(--yellow)}
 const CFG = {
   launchDate: '2026-10-10',        // first free day (YYYY-MM-DD)
   freeDays: 7,                     // free period length
-  adminPassword: 'cws-admin-2026', // CHANGE THIS. Visible in page source in demo mode.
-  whatsapp: '919741239979'
+  whatsapp: '919741239979',
+  adminUid: 'uBVoyGcGxycBffmaLdSlGwPVykw1',// Firebase Authentication > Users > your admin account > User UID
+  notifyUrl: '',                   // optional: Formspree form URL, emails you every new café request
+  demoPassword: 'cws-demo'         // used ONLY while Firebase is not connected (demo mode)
+};
+/* Firebase Console > Project settings > Your apps > Web app > copy the config values here */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCXNHs9MJDio7Lmo2o_JLTs4pgCy5OY4YQ',
+  authDomain: 'coffee-with-stranger-ac0ad.firebaseapp.com',
+  projectId: 'coffee-with-stranger-ac0ad',
+  storageBucket: 'coffee-with-stranger-ac0ad.firebasestorage.app',
+  messagingSenderId: '694078156482',
+  appId: '1:694078156482:web:5ad395ba47206dd578d55b'
 };
 
 /* ============ LISTS ============ */
@@ -551,13 +569,69 @@ const LIKES = ['Travel','Books','Fitness','Food','Gaming','Cricket','Trekking','
 const AREAS = ['Indiranagar','Koramangala','Whitefield','HSR Layout','Jayanagar','JP Nagar','MG Road','Malleshwaram','Electronic City','Marathahalli','BTM Layout','Yelahanka','Other'];
 
 /* ============ DATA LAYER ============
-   Everything goes through DB. Today it uses this browser's localStorage.
-   To share data between all visitors, replace get/set with calls to
-   Firebase, Supabase or Google Sheets (see the note after the code). */
+   Connected mode: Firebase Firestore, shared by every visitor and the admin.
+   Demo mode (Firebase not configured): this browser's localStorage only. */
+const FB_ON = !!(window.firebase && FIREBASE_CONFIG.apiKey && !/^PASTE/.test(FIREBASE_CONFIG.apiKey));
+let fs=null, auth=null, onData=function(){};
+const cache={users:[],cafes:[],requests:[],pairs:{}};
+const synced={users:{},cafes:{},requests:{},pairs:{}};
+const stable=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
+const lget=(k,d)=>{ try{ const v=localStorage.getItem('cws_'+k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+const lset=(k,v)=>{ try{ localStorage.setItem('cws_'+k,JSON.stringify(v)); }catch(e){} };
 const DB = {
-  get(k,d){ try{ const v=localStorage.getItem('cws_'+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
-  set(k,v){ try{ localStorage.setItem('cws_'+k,JSON.stringify(v)); }catch(e){} }
+  ready: Promise.resolve(),
+  get(k,d){ if(k==='me'||!FB_ON) return lget(k,d); return cache[k]!==undefined?cache[k]:d; },
+  set(k,v){
+    if(k==='me'||!FB_ON){ lset(k,v); return Promise.resolve(); }
+    cache[k]=v; const jobs=[];
+    const put=(id,item)=>{ const data=JSON.parse(JSON.stringify(item)); const st=stable(data); if(synced[k][id]===st) return; synced[k][id]=st; jobs.push(fs.collection(k).doc(id).set(data,{merge:true})); };
+    if(Array.isArray(v)){
+      v.forEach(it=>put(it.id,it));
+      if(k==='cafes'||k==='requests'){ const keep=new Set(v.map(x=>x.id)); Object.keys(synced[k]).forEach(id=>{ if(!keep.has(id)){ delete synced[k][id]; jobs.push(fs.collection(k).doc(id).delete()); } }); }
+    } else { Object.keys(v).forEach(id=>put(id,v[id])); }
+    return Promise.all(jobs).catch(err=>{ console.error(err); toast(err.code==='permission-denied'?'Could not save: permission denied. Check the Firestore rules.':'Could not save. Check your internet connection.'); });
+  },
+  start(){
+    if(!FB_ON) return;
+    firebase.initializeApp(FIREBASE_CONFIG); fs=firebase.firestore(); auth=firebase.auth();
+    const watch=k=>new Promise(res=>{
+      fs.collection(k).onSnapshot(snap=>{
+        const arr=[], obj={}; synced[k]={};
+        snap.forEach(d=>{ const data=d.data(); if(k==='pairs') obj[d.id]=data; else { data.id=d.id; arr.push(data); } synced[k][d.id]=stable(data); });
+        cache[k]=(k==='pairs')?obj:arr; res(); onData();
+      },err=>{ console.error(err); res(); });
+    });
+    DB.ready=Promise.race([Promise.all([watch('users'),watch('cafes'),watch('pairs')]),new Promise(r=>setTimeout(r,7000))]);
+    auth.onAuthStateChanged(user=>{
+      adminOn=!!(user && user.uid===CFG.adminUid);
+      if(adminOn) DB.watchRequests(); else DB.unwatchRequests();
+      if($('#adminOv').classList.contains('on')) showAdmin();
+      onData();
+    });
+  },
+  watchRequests(){
+    if(DB._rq) return;
+    DB._rq=fs.collection('requests').onSnapshot(snap=>{
+      const arr=[]; synced.requests={};
+      snap.forEach(d=>{ const x=d.data(); x.id=d.id; arr.push(x); synced.requests[d.id]=stable(x); });
+      arr.sort((a,b)=>(a.created||0)-(b.created||0)); cache.requests=arr; onData();
+    },err=>console.error(err));
+  },
+  unwatchRequests(){ if(DB._rq){ DB._rq(); DB._rq=null; } cache.requests=[]; synced.requests={}; },
+  async phoneLookup(h){ await DB.ready; if(!FB_ON) return (lget('phones',{}))[h]||null; const d=await fs.collection('phones').doc(h).get(); return d.exists?d.data().uid:null; },
+  async phoneSet(h,id){ if(!FB_ON){ const m=lget('phones',{}); m[h]=id; lset('phones',m); return; } await fs.collection('phones').doc(h).set({uid:id}); },
+  async contactSet(c){ if(!FB_ON){ const m=lget('contacts',{}); m[c.id]=c; lset('contacts',m); return; } await fs.collection('contacts').doc(c.id).set(c,{merge:true}); },
+  async contactsAll(){ if(!FB_ON) return Object.values(lget('contacts',{})); const sn=await fs.collection('contacts').get(); return sn.docs.map(d=>d.data()); }
 };
+async function phoneHash(p){
+  const t='cws:'+p;
+  if(window.crypto&&crypto.subtle){ const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+  let h=5381; for(const c of t) h=((h<<5)+h+c.charCodeAt(0))|0; return 'L'+(h>>>0).toString(16);
+}
+function notifyOwner(subject,fields){
+  if(!CFG.notifyUrl) return;
+  fetch(CFG.notifyUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(Object.assign({_subject:subject},fields))}).catch(()=>{});
+}
 const $ = s => document.querySelector(s);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
@@ -625,34 +699,44 @@ if(scanCafeId){
 
 /* ============ REGISTER ============ */
 function checked(name){ return [...document.querySelectorAll(`input[name=${name}]:checked`)].map(i=>i.value); }
-$('#regForm').addEventListener('submit',e=>{
+$('#regForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const err=$('#regErr'); err.textContent='';
+  const phone=cleanPhone($('#f_phone').value), email=$('#f_email').value.trim();
   const u = {
-    name:$('#f_name').value.trim(), age:parseInt($('#f_age').value,10), phone:cleanPhone($('#f_phone').value),
-    email:$('#f_email').value.trim(), gender:$('#f_gender').value, area:$('#f_place').value,
+    name:$('#f_name').value.trim(), age:parseInt($('#f_age').value,10),
+    gender:$('#f_gender').value, area:$('#f_place').value,
     cat:$('#f_cat').value, role:$('#f_role').value.trim(), fields:checked('field'), likes:checked('like'),
     about:$('#f_about').value.trim(), lookGender:(checked('lookGender')[0]||'Anyone'), wants:checked('want'),
     cafe:$('#f_cafe').value, slot:$('#f_slot').value
   };
   if(!u.name) return err.textContent='Please enter your name.';
   if(!(u.age>=18)) return err.textContent='You must be 18 or above to register.';
-  if(u.phone.length!==10) return err.textContent='Enter a valid 10-digit phone number.';
+  if(phone.length!==10) return err.textContent='Enter a valid 10-digit phone number.';
   if(!u.gender) return err.textContent='Please select your gender.';
   if(!u.area) return err.textContent='Please select your area.';
   if(!u.cat) return err.textContent='Please select your occupation group.';
   if(!u.wants.length) return err.textContent='Pick at least one group you would like to meet.';
   if(!$('#f_ok').checked) return err.textContent='Please tick the confirmation box.';
 
-  const users = DB.get('users',[]);
-  const ex = users.find(x=>x.phone===u.phone);
-  if(ex){ Object.assign(ex,u); } else { u.id=uid(); u.created=Date.now(); u.seen=[]; users.push(u); }
-  DB.set('users',users);
-  const me = ex||u;
-  DB.set('me',me.id);
-  toast('You are registered. Finding your matches…');
-  updateBell();
-  setTimeout(()=>openMatches(),700);
+  const btn=e.target.querySelector('button[type=submit]'); btn.disabled=true;
+  try{
+    const h=await phoneHash(phone);
+    const exId=await DB.phoneLookup(h);
+    const users=DB.get('users',[]);
+    const found=exId?users.find(x=>x.id===exId):null;
+    let me;
+    if(found){ Object.assign(found,u); me=found; }
+    else { u.id=exId||uid(); u.created=Date.now(); u.seen=[]; users.push(u); me=u; }
+    await DB.set('users',users);
+    await DB.contactSet({id:me.id,name:u.name,phone:phone,email:email,created:me.created||Date.now()});
+    if(!exId) await DB.phoneSet(h,me.id);
+    DB.set('me',me.id);
+    toast('You are registered. Finding your matches…');
+    updateBell();
+    setTimeout(()=>openMatches(),700);
+  }catch(ex){ console.error(ex); err.textContent='We could not save your registration. Please check your internet and try again.'; }
+  finally{ btn.disabled=false; }
 });
 
 /* ============ MATCHING ============ */
@@ -721,7 +805,7 @@ function openMatches(){
   $('#mmBody').innerHTML=html;
   // mark as seen
   const users=DB.get('users',[]), mm=users.find(x=>x.id===me.id);
-  mm.seen=list.map(m=>m.u.id); DB.set('users',users); updateBell();
+  if(mm){ mm.seen=list.map(m=>m.u.id).sort(); DB.set('users',users); } updateBell();
   openOv('matchOv');
 }
 $('#mmBody').addEventListener('click',e=>{
@@ -755,8 +839,11 @@ const _mf=matchesFor;
 matchesFor=function(me){ const h=me.hidden||[]; return _mf(me).filter(m=>!h.includes(m.u.id)); };
 $('#bellBtn').onclick=()=>{ getMe()?openMatches():openOv('signOv'); };
 $('#signinBtn').onclick=()=>openOv('signOv');
-$('#signGo').onclick=()=>{
-  const p=cleanPhone($('#s_phone').value), u=DB.get('users',[]).find(x=>x.phone===p);
+$('#signGo').onclick=async()=>{
+  const p=cleanPhone($('#s_phone').value);
+  if(p.length!==10){ $('#signErr').textContent='Enter a valid 10-digit phone number.'; return; }
+  const id=await DB.phoneLookup(await phoneHash(p));
+  const u=id && DB.get('users',[]).find(x=>x.id===id);
   if(!u){ $('#signErr').textContent='No profile found for this number. Please register first.'; return; }
   $('#signErr').textContent=''; DB.set('me',u.id); closeOv('signOv'); updateBell(); openMatches();
 };
@@ -773,30 +860,54 @@ function renderCafes(){
 }
 
 /* ============ CAFÉ OWNER REQUEST ============ */
-$('#ownerForm').addEventListener('submit',e=>{
+$('#ownerForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const r={id:uid(),name:$('#o_name').value.trim(),owner:$('#o_owner').value.trim(),phone:$('#o_phone').value.trim(),addr:$('#o_addr').value.trim(),hours:$('#o_hours').value.trim()};
+  const r={id:uid(),name:$('#o_name').value.trim(),owner:$('#o_owner').value.trim(),phone:$('#o_phone').value.trim(),email:$('#o_email').value.trim(),addr:$('#o_addr').value.trim(),hours:$('#o_hours').value.trim(),created:Date.now()};
   if(!r.name||!r.owner||!r.phone||!r.addr){ $('#ownerErr').textContent='Please fill in all required fields.'; return; }
   $('#ownerErr').textContent='';
-  const reqs=DB.get('requests',[]); reqs.push(r); DB.set('requests',reqs);
-  e.target.reset(); toast('Request received. We will call you within 48 hours.');
+  const btn=e.target.querySelector('button[type=submit]'); btn.disabled=true;
+  const msg='Hello, I would like to list my café on Coffee With Stranger.\nCafé: '+r.name+'\nName: '+r.owner+'\nPhone: '+r.phone+'\nArea: '+r.addr+(r.hours?'\nHours: '+r.hours:'');
+  $('#ownerWa').href='https://wa.me/'+CFG.whatsapp+'?text='+encodeURIComponent(msg);
+  try{
+    if(FB_ON){ await fs.collection('requests').doc(r.id).set(r); }
+    else { const reqs=lget('requests',[]); reqs.push(r); lset('requests',reqs); }
+    notifyOwner('New café request: '+r.name,{cafe:r.name,owner:r.owner,phone:r.phone,email:r.email,address:r.addr,hours:r.hours});
+    e.target.reset(); $('#ownerDone').classList.remove('hidden'); toast('Request received. We will call you within 48 hours.');
+  }catch(ex){
+    console.error(ex);
+    $('#ownerErr').textContent='We could not send the request online. Please tap the WhatsApp button below to send it to us directly.';
+    $('#ownerDone').classList.remove('hidden');
+  }
+  finally{ btn.disabled=false; }
 });
 
 /* ============ ADMIN (hidden) ============
    Open with  yoursite.com/#admin  or click the © line in the footer 5 times. */
-let adminOn = sessionStorage.getItem('cws_admin')==='1';
+let adminOn = false;
 function openAdmin(){ openOv('adminOv'); showAdmin(); }
 function showAdmin(){
   $('#adminLogin').classList.toggle('hidden',adminOn);
   $('#adminApp').classList.toggle('hidden',!adminOn);
+  $('#a_emailField').classList.toggle('hidden',!FB_ON);
+  $('#adminNote').textContent = FB_ON
+    ? 'Connected: members, cafés and requests are shared across all devices. QR codes link to '+siteUrl()+'. Open this admin page from your live website so the QR links are correct.'
+    : 'Demo mode: data is saved in this browser only. Connect Firebase (see SETUP.md) so cafés and requests are shared across all devices.';
   if(adminOn) renderAdmin();
 }
-$('#adminGo').onclick=()=>{
-  if($('#a_pass').value===CFG.adminPassword){ adminOn=true; sessionStorage.setItem('cws_admin','1'); $('#a_pass').value=''; $('#adminErr').textContent=''; showAdmin(); }
-  else $('#adminErr').textContent='Wrong password.';
+$('#adminGo').onclick=async()=>{
+  const err=$('#adminErr'); err.textContent='';
+  if(!FB_ON){
+    if($('#a_pass').value===CFG.demoPassword){ adminOn=true; $('#a_pass').value=''; showAdmin(); } else err.textContent='Wrong password.';
+    return;
+  }
+  try{
+    const cred=await auth.signInWithEmailAndPassword($('#a_email').value.trim(),$('#a_pass').value);
+    if(cred.user.uid!==CFG.adminUid){ await auth.signOut(); err.textContent='This account is not the admin account.'; return; }
+    $('#a_pass').value='';
+  }catch(ex){ err.textContent='Sign-in failed. Check the email and password.'; }
 };
 $('#a_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#adminGo').click(); });
-$('#adminOut').onclick=()=>{ adminOn=false; sessionStorage.removeItem('cws_admin'); closeOv('adminOv'); showAdmin(); };
+$('#adminOut').onclick=()=>{ adminOn=false; if(FB_ON&&auth) auth.signOut(); closeOv('adminOv'); showAdmin(); };
 let clicks=0,ct; $('#copy').onclick=()=>{ clicks++; clearTimeout(ct); ct=setTimeout(()=>clicks=0,1500); if(clicks>=5){ clicks=0; openAdmin(); } };
 $('#brand').addEventListener('click',()=>{});
 window.addEventListener('hashchange',()=>{ if(location.hash==='#admin') openAdmin(); });
@@ -826,6 +937,7 @@ function renderAdmin(){
   });
 
   const reqs=DB.get('requests',[]);
+  $('#reqHead').textContent='Café requests from owners'+(reqs.length?' ('+reqs.length+' pending)':'');
   $('#reqList').innerHTML = reqs.length ? reqs.map(r=>`<div class="req"><b>${esc(r.name)}</b> · ${esc(r.addr)}<br>${esc(r.owner)} · ${esc(r.phone)}${r.hours?' · '+esc(r.hours):''}
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary btn-sm" data-approve="${esc(r.id)}">Approve and add</button><button class="btn btn-danger btn-sm" data-reject="${esc(r.id)}">Reject</button></div></div>`).join('')
     : '<p style="color:var(--muted);font-size:14.5px">No pending requests.</p>';
@@ -849,41 +961,35 @@ $('#adminApp').addEventListener('click',e=>{
   }
   if(ap){
     const reqs=DB.get('requests',[]), r=reqs.find(x=>x.id===ap.dataset.approve);
-    const cafes=DB.get('cafes',[]); cafes.push({id:uid(),name:r.name,area:'Other',phone:r.phone,address:r.addr,owner:r.owner,hours:r.hours});
+    const cafes=DB.get('cafes',[]); cafes.push({id:uid(),name:r.name,area:(AREAS.find(a=>a!=='Other'&&(r.addr||'').toLowerCase().includes(a.toLowerCase()))||'Other'),phone:r.phone,address:r.addr,owner:r.owner,hours:r.hours});
     DB.set('cafes',cafes); DB.set('requests',reqs.filter(x=>x.id!==r.id)); renderAdmin(); renderCafes(); refreshCafeSelect(); toast('Café approved and added.');
   }
   if(rj){ DB.set('requests',DB.get('requests',[]).filter(x=>x.id!==rj.dataset.reject)); renderAdmin(); }
 });
-$('#seedBtn').onclick=()=>{
-  const S=[
-    ['Ananya R',27,'Female','lawyer','Associate lawyer','Indiranagar',['Law','Startups'],['Books','Travel'],['Male','Female'].includes('Female')?'Anyone':'Anyone',['it','startup','business','doctor']],
-    ['Rahul K',30,'Male','it','Software engineer','Indiranagar',['Technology','Startups'],['Travel','Cricket','Podcasts'],'Anyone',['it','lawyer','startup','film','students']],
-    ['Dr. Meera S',33,'Female','doctor','General physician','Koramangala',['Healthcare','Social work'],['Books','Meditation'],'Anyone',['it','lawyer','business','others']],
-    ['Karthik V',29,'Male','film','Short film director','Indiranagar',['Movies and cinema','Photography'],['Travel','Food','Music'],'Anyone',['it','film','students','startup','lawyer','doctor']],
-    ['Sneha P',24,'Female','students','MBA student','Koramangala',['Startups','Finance'],['Fitness','Books','Travel'],'Anyone',['it','startup','business','lawyer','film']],
-    ['Imran A',35,'Male','realestate','Property consultant','Whitefield',['Real estate','Finance'],['Cricket','Food'],'Anyone',['business','it','construction','startup']]
-  ];
+$('#csvBtn').onclick=async()=>{
   const users=DB.get('users',[]);
-  S.forEach((s,i)=>{ const ph='99000000'+String(10+i); if(users.find(u=>u.phone===ph)) return;
-    users.push({id:uid(),demo:true,name:s[0],age:s[1],gender:s[2],cat:s[3],role:s[4],area:s[5],fields:s[6],likes:s[7],lookGender:s[8],wants:s[9],about:'Sample member for testing.',phone:ph,email:'',cafe:'',slot:'Evening (4 PM – 7 PM)',seen:[],created:Date.now()}); });
-  DB.set('users',users); renderAdmin(); toast('Sample members added. Register as yourself to see matches.');
-};
-$('#csvBtn').onclick=()=>{
-  const users=DB.get('users',[]).filter(u=>!u.demo);
+  const cm={}; (await DB.contactsAll()).forEach(c=>cm[c.id]=c);
   const head=['Name','Age','Gender','Phone','Email','Occupation','Role','Area','Interested in','Likes','Looking for','Wants to meet','Slot'];
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const rows=users.map(u=>[u.name,u.age,u.gender,u.phone,u.email,catLabel(u.cat),u.role,u.area,u.fields.join('; '),u.likes.join('; '),u.lookGender,u.wants.map(catLabel).join('; '),u.slot].map(q).join(','));
+  const rows=users.map(u=>{ const c=cm[u.id]||{}; return [u.name,u.age,u.gender,c.phone||'',c.email||'',catLabel(u.cat),u.role,u.area,(u.fields||[]).join('; '),(u.likes||[]).join('; '),u.lookGender,(u.wants||[]).map(catLabel).join('; '),u.slot].map(q).join(','); });
   const blob=new Blob([[head.map(q).join(',')].concat(rows).join('\n')],{type:'text/csv'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cws-members.csv'; a.click();
 };
-$('#wipeBtn').onclick=()=>{ if(confirm('Delete all members, matches, cafés and requests from this browser?')){ ['users','cafes','pairs','requests','me'].forEach(k=>localStorage.removeItem('cws_'+k)); renderAdmin(); renderCafes(); refreshCafeSelect(); updateBell(); toast('All data cleared.'); } };
 
 /* ============ NAV ============ */
 $('#menuBtn').onclick=()=>$('#navLinks').classList.toggle('open');
 $('#navLinks').addEventListener('click',e=>{ if(e.target.tagName==='A') $('#navLinks').classList.remove('open'); });
 
 /* ============ INIT ============ */
-buildForm(); renderCafes(); updateBell();
+onData=function(){
+  try{
+    const sel=$('#f_cafe'), keep=sel?sel.value:'';
+    renderCafes(); refreshCafeSelect(keep||undefined); updateBell();
+    if(adminOn) renderAdmin();
+    if($('#matchOv').classList.contains('on')) openMatches();
+  }catch(e){ console.error(e); }
+};
+DB.start(); buildForm(); renderCafes(); updateBell();
 (function(){ const me=getMe(); const n=newCount(me); if(me&&n) setTimeout(()=>toast('🔔 '+n+' new '+(n>1?'people match':'person matches')+' your interests'),1200); })();
 </script>
 </body>
