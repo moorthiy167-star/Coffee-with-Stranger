@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee With Stranger | Meet Someone New Over Coffee — Bengaluru</title>
+<meta name="description" content="Scan a café QR, tell us who you'd like to meet, and share a coffee with a stranger who shares your interests. Free for the first week in Bengaluru.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+:root{
+  --roast:#1d130e;
+  --auto:#0d5b3e;
+  --auto-dark:#093f2b;
+  --yellow:#ffc72c;
+  --paper:#eef2ec;
+  --white:#ffffff;
+  --muted:#5b665f;
+  --line:#d3dcd2;
+  --danger:#b3261e;
+  --r-lg:22px; --r-md:14px; --r-sm:9px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:'Hanken Grotesk',system-ui,sans-serif;background:var(--paper);color:var(--roast);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Bricolage Grotesque','Hanken Grotesk',sans-serif;line-height:1.08;letter-spacing:-.02em}
+a{color:inherit}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+section{padding:84px 0}
+.hidden{display:none!important}
+
+/* free banner */
+.free-bar{background:var(--yellow);color:var(--roast);text-align:center;font-weight:600;font-size:14.5px;padding:9px 14px}
+.free-bar b{font-weight:800}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;background:rgba(238,242,236,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:66px;gap:14px}
+.brand{font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;text-decoration:none;display:flex;align-items:center;gap:8px;user-select:none}
+.brand i{font-style:normal;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--auto);color:var(--yellow);font-size:17px}
+.nav-links{display:flex;gap:22px;align-items:center}
+.nav-links a{text-decoration:none;font-weight:600;font-size:15px;color:var(--muted)}
+.nav-links a:hover{color:var(--auto)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid transparent;border-radius:999px;padding:13px 24px;font-weight:700;font-size:15.5px;text-decoration:none;transition:transform .15s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--auto);color:#fff}
+.btn-primary:hover{background:var(--auto-dark)}
+.btn-yellow{background:var(--yellow);color:var(--roast)}
+.btn-yellow:hover{background:#ffd14f}
+.btn-ghost{background:transparent;border-color:var(--roast);color:var(--roast)}
+.btn-ghost:hover{background:var(--roast);color:#fff}
+.btn-sm{padding:8px 16px;font-size:14px}
+.btn-danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+.bell{position:relative;background:var(--white);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:700;font-size:14.5px}
+.bell .dot{position:absolute;top:-6px;right:-4px;background:var(--danger);color:#fff;border-radius:999px;min-width:20px;height:20px;font-size:12px;display:grid;place-items:center;padding:0 5px}
+.menu-btn{display:none;background:none;border:none;font-size:26px}
+
+/* hero */
+.hero{padding:64px 0 90px;background:var(--auto);color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-120px;bottom:-160px;width:460px;height:460px;border-radius:50%;background:var(--yellow);opacity:.16}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;position:relative;z-index:1}
+.hero h1{font-size:clamp(40px,6.4vw,78px);font-weight:800}
+.hero h1 span{color:var(--yellow)}
+.hero p.lead{font-size:19px;max-width:520px;margin:22px 0 30px;color:#d7ece0}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero .btn-ghost{border-color:#fff;color:#fff}
+.hero .btn-ghost:hover{background:#fff;color:var(--auto)}
+.hero-note{margin-top:22px;font-size:14.5px;color:#b9dcc9}
+
+/* the notification ticket (hero centrepiece) */
+.ticket{background:var(--white);color:var(--roast);border-radius:var(--r-lg);padding:22px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);transform:rotate(2deg);max-width:400px;margin-left:auto;animation:pop .9s cubic-bezier(.2,1.2,.4,1) .3s both}
+@keyframes pop{from{opacity:0;transform:rotate(-4deg) translateY(40px) scale(.92)}to{opacity:1;transform:rotate(2deg)}}
+.ticket .tk-top{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:var(--auto);margin-bottom:14px}
+.ticket .pulse{width:10px;height:10px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 0 rgba(179,38,30,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(179,38,30,0)}100%{box-shadow:0 0 0 0 rgba(179,38,30,0)}}
+.tk-person{display:flex;gap:14px;align-items:center}
+.avatar{width:54px;height:54px;border-radius:50%;background:var(--yellow);display:grid;place-items:center;font-family:'Bricolage Grotesque';font-weight:800;font-size:22px;flex:none}
+.tk-person h3{font-size:20px}
+.tk-person small{color:var(--muted);font-size:14px}
+.chips-static{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.chip-s{background:var(--paper);border-radius:999px;padding:4px 11px;font-size:13px;font-weight:600}
+.tk-actions{display:flex;gap:8px;margin-top:6px}
+.tk-actions .btn{flex:1;padding:11px 12px;font-size:14.5px}
+.ticket-cut{border-top:2px dashed var(--line);margin:16px -22px 12px}
+.tk-foot{font-size:13px;color:var(--muted)}
+
+/* sections */
+.sec-head{max-width:640px;margin-bottom:44px}
+.sec-head h2{font-size:clamp(30px,4.4vw,48px);font-weight:800}
+.sec-head p{margin-top:14px;color:var(--muted);font-size:18px}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;counter-reset:s}
+.step{background:var(--white);border-radius:var(--r-lg);padding:26px 22px;border:1px solid var(--line);position:relative}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:-16px;left:20px;background:var(--yellow);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:'Bricolage Grotesque';font-weight:800}
+.step .ic{font-size:30px;margin-bottom:10px}
+.step h3{font-size:20px;margin-bottom:8px}
+.step p{color:var(--muted);font-size:15.5px}
+
+/* register */
+.reg-wrap{background:var(--roast);color:#fff}
+.reg-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:44px;align-items:start}
+.reg-side h2{font-size:clamp(32px,4.6vw,52px);font-weight:800}
+.reg-side p{color:#cbbfb7;margin-top:16px;font-size:17px}
+.free-pill{display:inline-block;background:var(--yellow);color:var(--roast);font-weight:800;border-radius:999px;padding:6px 16px;margin-top:22px}
+.scan-box{margin-top:26px;background:rgba(255,255,255,.07);border-radius:var(--r-md);padding:18px;display:none;font-size:15.5px}
+.scan-box.on{display:block}
+.scan-box b{color:var(--yellow)}
+.form-card{background:var(--white);color:var(--roast);border-radius:var(--r-lg);padding:30px}
+fieldset{border:none;margin-bottom:26px}
+legend{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;margin-bottom:12px;padding:0}
+legend small{display:block;font-family:'Hanken Grotesk';font-weight:500;font-size:14px;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-weight:600;font-size:14.5px}
+input[type=text],input[type=tel],input[type=email],input[type=number],input[type=password],select,textarea{width:100%;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:#fbfcfb;color:var(--roast)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--auto);box-shadow:0 0 0 3px rgba(13,91,62,.15)}
+textarea{min-height:76px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer;width:100%;height:100%}
+.chip span{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border:1.5px solid var(--line);border-radius:999px;font-weight:600;font-size:14.5px;background:#fbfcfb;transition:all .12s;user-select:none}
+.chip input:checked+span{background:var(--auto);border-color:var(--auto);color:#fff}
+.chip input:focus-visible+span{outline:3px solid var(--yellow);outline-offset:2px}
+.chip small{font-weight:500;opacity:.75;font-size:12.5px}
+.link-btn{background:none;border:none;color:var(--auto);font-weight:700;font-size:14px;text-decoration:underline;margin-top:10px}
+.consent{display:flex;gap:10px;font-size:14px;color:var(--muted);margin:6px 0 18px;align-items:flex-start}
+.consent input{margin-top:4px;width:18px;height:18px;accent-color:var(--auto)}
+.err{color:var(--danger);font-weight:600;font-size:14.5px;margin-bottom:12px;min-height:0}
+.signin-line{margin-top:14px;font-size:14.5px;color:var(--muted);text-align:center}
+
+/* cafes */
+.cafe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.cafe{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;gap:6px}
+.cafe .badge{align-self:flex-start;background:var(--yellow);font-size:13px;font-weight:700;padding:3px 11px;border-radius:999px}
+.cafe .badge.soon{background:var(--paper);color:var(--muted)}
+.cafe h3{font-size:21px;margin-top:6px}
+.cafe p{color:var(--muted);font-size:15px}
+.cafe .btn{margin-top:auto;align-self:flex-start}
+
+/* owners + safety */
+.owner{background:var(--yellow)}
+.owner-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
+.owner h2{font-size:clamp(30px,4.4vw,48px);font-weight:800}
+.perk{display:flex;gap:12px;margin-top:18px;font-weight:500}
+.perk b{display:block;font-size:17px}
+.perk span.i{font-size:24px}
+.safety-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.safe{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px}
+.safe .ic{font-size:28px}
+.safe h3{font-size:19px;margin:8px 0 6px}
+.safe p{font-size:15px;color:var(--muted)}
+.faq details{background:var(--white);border:1px solid var(--line);border-radius:var(--r-md);padding:18px 22px;margin-bottom:12px}
+.faq summary{font-weight:700;cursor:pointer;font-size:17px}
+.faq p{margin-top:10px;color:var(--muted)}
+.founder{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:30px}
+.founder .avatar{width:84px;height:84px;font-size:36px}
+.founder blockquote{margin-top:12px;font-size:18px;font-family:'Bricolage Grotesque';font-weight:500;line-height:1.35}
+
+footer{background:var(--roast);color:#cbbfb7;padding:48px 0 30px;font-size:15px}
+footer a{text-decoration:none}
+footer a:hover{color:var(--yellow)}
+.foot-grid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.foot-grid h4{color:#fff;font-size:18px;margin-bottom:8px}
+.copy{margin-top:30px;border-top:1px solid #3a2c24;padding-top:18px;font-size:13.5px;cursor:default;user-select:none}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(29,19,14,.62);z-index:100;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 14px}
+.overlay.on{display:flex}
+.modal{background:var(--paper);border-radius:var(--r-lg);width:100%;max-width:640px;padding:28px;position:relative;animation:rise .25s ease-out}
+.modal.wide{max-width:980px}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.modal h2{font-size:28px;margin-bottom:6px}
+.x{position:absolute;top:14px;right:16px;background:var(--white);border:1px solid var(--line);width:36px;height:36px;border-radius:50%;font-size:18px}
+.match{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;margin-top:14px}
+.match.new{border-color:var(--auto);box-shadow:0 0 0 3px rgba(13,91,62,.12)}
+.match .top{display:flex;gap:14px;align-items:center}
+.match h3{font-size:20px}
+.match small{color:var(--muted)}
+.tag-mutual{background:var(--yellow);font-size:12.5px;font-weight:700;border-radius:999px;padding:2px 10px;margin-left:6px;vertical-align:middle}
+.match .row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.confirmed{background:var(--auto);color:#fff;border-radius:var(--r-md);padding:16px;margin-top:14px}
+.confirmed b{color:var(--yellow)}
+.waiting{background:var(--paper);border-radius:var(--r-md);padding:12px 14px;margin-top:14px;font-weight:600;color:var(--muted)}
+.empty{text-align:center;padding:36px 10px;color:var(--muted)}
+.empty .ic{font-size:40px}
+
+/* admin */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.stat{background:var(--white);border:1px solid var(--line);border-radius:var(--r-md);padding:14px}
+.stat b{font-family:'Bricolage Grotesque';font-size:30px;display:block}
+.stat span{font-size:13.5px;color:var(--muted)}
+.admin-cols{display:grid;grid-template-columns:.9fr 1.1fr;gap:20px}
+.panel{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px}
+.panel h3{font-size:20px;margin-bottom:12px}
+.acafe{display:flex;gap:14px;align-items:center;border-top:1px solid var(--line);padding:14px 0}
+.acafe:first-of-type{border-top:none}
+.acafe .qr{flex:none;background:#fff;padding:6px;border-radius:8px;border:1px solid var(--line)}
+.acafe .info{flex:1;font-size:14.5px;min-width:0}
+.acafe .info b{font-size:16.5px}
+.acafe .acts{display:flex;flex-direction:column;gap:6px}
+.req{border-top:1px solid var(--line);padding:12px 0;font-size:14.5px}
+.admin-note{background:#fff6dc;border:1px solid #ecd486;border-radius:var(--r-md);padding:12px 14px;font-size:14px;margin-top:14px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--roast);color:#fff;padding:14px 22px;border-radius:999px;font-weight:600;z-index:200;opacity:0;transition:all .3s;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+@media(max-width:900px){
+  .hero-grid,.reg-grid,.owner-grid,.admin-cols{grid-template-columns:1fr}
+  .ticket{margin:10px auto 0}
+  .steps,.safety-grid,.stats{grid-template-columns:1fr 1fr}
+  .nav-links{display:none;position:absolute;top:66px;left:0;right:0;background:var(--paper);flex-direction:column;padding:18px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .nav-links.open{display:flex}
+  .menu-btn{display:block}
+  section{padding:64px 0}
+}
+@media(max-width:560px){
+  .steps,.safety-grid,.grid2{grid-template-columns:1fr}
+  .founder{grid-template-columns:1fr}
+  .form-card{padding:20px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="free-bar" id="freeBar">Free for the first 7 days. No registration fee. <b id="freeCount"></b></div>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="#top" class="brand" id="brand"><i>☕</i> Coffee With Stranger</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="#how">How it works</a>
+      <a href="#cafes">Cafés</a>
+      <a href="#owners">For café owners</a>
+      <a href="#safety">Safety</a>
+      <button class="bell" id="bellBtn">🔔 My matches <span class="dot hidden" id="bellDot">0</span></button>
+      <a class="btn btn-primary btn-sm" href="#register">Register free</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>One coffee. <span>One stranger</span> who gets you.</h1>
+      <p class="lead">Scan the QR at a partner café, tell us who you'd like to meet, and we'll tell you when someone matching your interests says yes. No swiping. Just a table for two.</p>
+      <div class="hero-cta">
+        <a class="btn btn-yellow" href="#register">Register free</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <p class="hero-note">Starting in Bengaluru. Public cafés only. Free for the first week.</p>
+    </div>
+    <div class="ticket" aria-label="Example match notification">
+      <div class="tk-top"><span class="pulse"></span> New match for your interests</div>
+      <div class="tk-person">
+        <div class="avatar">A</div>
+        <div><h3>Ananya, 27</h3><small>Lawyer · Indiranagar</small></div>
+      </div>
+      <div class="chips-static"><span class="chip-s">Books</span><span class="chip-s">Travel</span><span class="chip-s">Startups</span></div>
+      <div class="tk-actions"><span class="btn btn-primary">Yes, let's meet</span><span class="btn btn-ghost">Not now</span></div>
+      <div class="ticket-cut"></div>
+      <div class="tk-foot">If you both say yes, we pick the café and you scan its QR to check in. (Example card)</div>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>From QR scan to coffee in four steps</h2>
+      <p>You choose who you'd like to meet. Nobody gets your phone number until you both agree.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="ic">📱</div><h3>Scan and register</h3><p>Scan a café QR code and fill in your name, work, interests, area and what you like.</p></div>
+      <div class="step"><div class="ic">🎯</div><h3>Pick who you'd like to meet</h3><p>Choose a gender preference and one or many groups: IT, doctors, lawyers, film people, students and more.</p></div>
+      <div class="step"><div class="ic">🔔</div><h3>Get a match alert</h3><p>When someone fits your choices, you see their profile and tap OK if you'd like to meet.</p></div>
+      <div class="step"><div class="ic">☕</div><h3>Meet at the café</h3><p>When both of you tap OK, you get a partner café and slot. Scan the café's QR to check in.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="reg-wrap" id="register">
+  <div class="wrap reg-grid">
+    <div class="reg-side">
+      <h2>Tell us who you are and who you'd like to meet</h2>
+      <p>It takes about two minutes. You can pick as many groups as you like.</p>
+      <span class="free-pill">Free for 1 week</span>
+      <div class="scan-box" id="scanBox">You scanned the QR at <b id="scanCafe"></b>. We've picked this café for you.</div>
+    </div>
+    <div class="form-card">
+      <form id="regForm" novalidate>
+        <fieldset>
+          <legend>About you</legend>
+          <div class="grid2">
+            <div class="field"><label for="f_name">Full name</label><input type="text" id="f_name" autocomplete="name" required></div>
+            <div class="field"><label for="f_age">Age (18 or above)</label><input type="number" id="f_age" min="18" max="90" inputmode="numeric" required></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label for="f_phone">Phone number</label><input type="tel" id="f_phone" autocomplete="tel" inputmode="tel" required></div>
+            <div class="field"><label for="f_email">Email (optional)</label><input type="email" id="f_email" autocomplete="email"></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label for="f_gender">You are</label>
+              <select id="f_gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+            <div class="field"><label for="f_place">Your area in Bengaluru</label>
+              <select id="f_place" required></select></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Your occupation<small>Pick the group that fits you best.</small></legend>
+          <div class="field"><select id="f_cat" required></select></div>
+          <div class="field"><label for="f_role">Job title or what you do (optional)</label><input type="text" id="f_role" placeholder="Example: Software engineer, short film director"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Fields you're interested in<small>Pick any.</small></legend>
+          <div class="chips" id="fieldChips"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>What you like<small>Pick any, or write your own below.</small></legend>
+          <div class="chips" id="likeChips"></div>
+          <div class="field" style="margin-top:12px"><textarea id="f_about" placeholder="One or two lines about you (optional)"></textarea></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Who would you like to have coffee with?</legend>
+          <div class="chips" id="genderChips" style="margin-bottom:18px"></div>
+          <div class="chips" id="wantChips"></div>
+          <button type="button" class="link-btn" id="selAll">Select all groups</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Where and when</legend>
+          <div class="grid2">
+            <div class="field"><label for="f_cafe">Preferred café</label><select id="f_cafe"></select></div>
+            <div class="field"><label for="f_slot">Time slot</label>
+              <select id="f_slot"><option>Morning (8 AM – 11 AM)</option><option>Afternoon (12 PM – 3 PM)</option><option selected>Evening (4 PM – 7 PM)</option></select></div>
+          </div>
+        </fieldset>
+
+        <label class="consent"><input type="checkbox" id="f_ok"> <span>I am 18 or above. I agree to meet only in a public café, to share my profile (without my phone number) with people who match, and to be contacted by Coffee With Stranger on this number about matches.</span></label>
+        <div class="err" id="regErr" role="alert"></div>
+        <button class="btn btn-yellow" style="width:100%" type="submit">Register and see my matches</button>
+        <p class="signin-line">Already registered? <button type="button" class="link-btn" id="signinBtn" style="margin:0">Sign in with your phone number</button></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="cafes">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Partner cafés</h2>
+      <p>Every café has its own QR code. Scan it at the table to register or to check in for your meetup.</p>
+    </div>
+    <div class="cafe-grid" id="cafeGrid"></div>
+  </div>
+</section>
+
+<section class="owner" id="owners">
+  <div class="wrap owner-grid">
+    <div>
+      <h2>Own a café? Join the network.</h2>
+      <p style="margin-top:16px;font-size:18px">We send you people who come to talk, stay for a while and order more. Listing is free.</p>
+      <div class="perk"><span class="i">📈</span><div><b>More footfall</b>Every meetup brings at least two guests to your tables.</div></div>
+      <div class="perk"><span class="i">🧾</span><div><b>Zero cost to join</b>Free during launch, with no setup fee.</div></div>
+      <div class="perk"><span class="i">🔳</span><div><b>Your own QR code</b>Once approved, you get a printable QR for your tables.</div></div>
+    </div>
+    <div class="form-card">
+      <form id="ownerForm">
+        <h3 style="font-size:24px;margin-bottom:14px">Request a listing</h3>
+        <div class="field"><label for="o_name">Café name</label><input type="text" id="o_name" required></div>
+        <div class="grid2">
+          <div class="field"><label for="o_owner">Your name</label><input type="text" id="o_owner" required></div>
+          <div class="field"><label for="o_phone">Phone</label><input type="tel" id="o_phone" required></div>
+        </div>
+        <div class="field"><label for="o_email">Email (optional)</label><input type="email" id="o_email"></div>
+        <div class="field"><label for="o_addr">Area and landmark</label><input type="text" id="o_addr" required></div>
+        <div class="field"><label for="o_hours">Opening hours</label><input type="text" id="o_hours" placeholder="Example: 8 AM – 10 PM"></div>
+        <div class="err" id="ownerErr" role="alert"></div>
+        <button class="btn btn-primary" style="width:100%" type="submit">Send request</button>
+        <p class="signin-line">We call you within 48 hours.</p>
+      </form>
+      <div id="ownerDone" class="hidden" style="margin-top:16px;padding:16px;border-radius:14px;background:#FFF4E0;color:#2A1810">
+        <b>Request received.</b> We will call you within 48 hours. For a faster reply, send it to us on WhatsApp too.
+        <div style="margin-top:12px"><a class="btn btn-yellow btn-sm" id="ownerWa" target="_blank" rel="noopener">Message us on WhatsApp</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap">
+    <div class="sec-head"><h2>Built for safe first meetings</h2></div>
+    <div class="safety-grid">
+      <div class="safe"><div class="ic">📞</div><h3>Phone number required</h3><p>Every member registers with a phone number. Anonymous profiles are not accepted.</p></div>
+      <div class="safe"><div class="ic">🏪</div><h3>Public cafés only</h3><p>All meetups happen in busy partner cafés. We never arrange private meetings.</p></div>
+      <div class="safe"><div class="ic">🤝</div><h3>Both must say yes</h3><p>Nothing is confirmed until both people tap OK. Your phone number stays hidden.</p></div>
+      <div class="safe"><div class="ic">🚪</div><h3>Leave any time</h3><p>Not feeling it? Skip a match or walk out. No questions asked.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="founder">
+      <div class="avatar">M</div>
+      <div>
+        <h3 style="font-size:24px">Moorthi R, Founder</h3>
+        <blockquote>"In a city of millions, it is still possible to feel alone. We don't need more followers. We need more face-to-face moments."</blockquote>
+        <p style="margin-top:12px;color:var(--muted)">📞 <a href="tel:+919741239979">97412 39979</a> &nbsp; ✉ <a href="mailto:coffeewithstranger2024@gmail.com">coffeewithstranger2024@gmail.com</a> &nbsp; 💬 <a href="https://wa.me/919741239979">WhatsApp</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq" style="padding-top:0">
+  <div class="wrap" style="max-width:800px">
+    <div class="sec-head"><h2>Questions</h2></div>
+    <details><summary>Is it really free?</summary><p>Yes. For the first 7 days there is no registration fee. You only pay for what you order at the café.</p></details>
+    <details><summary>Can I choose who I meet?</summary><p>Yes. You choose a gender preference and any number of groups, such as IT, doctors, police, lawyers, business owners, startup people, real estate, film industry (short film artists, directors, models), construction, students or others.</p></details>
+    <details><summary>How will I know someone matches?</summary><p>You see an alert on the 🔔 My matches button. Open it to view their profile and tap OK if you'd like to meet.</p></details>
+    <details><summary>What does the café QR do?</summary><p>It links you to that café. Scan it to register at that venue, and scan it again when you arrive to check in for your confirmed meetup.</p></details>
+    <details><summary>Is this a dating service?</summary><p>No. Coffee With Stranger is for conversations, friendships and networking in public cafés.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div><h4>☕ Coffee With Stranger</h4>Structured, in-person coffee meetups in partner cafés.<br>Bengaluru, India</div>
+      <div><h4>Contact</h4><a href="mailto:coffeewithstranger2024@gmail.com">coffeewithstranger2024@gmail.com</a><br><a href="https://wa.me/919741239979">WhatsApp +91 97412 39979</a></div>
+      <div><h4>Explore</h4><a href="#how">How it works</a><br><a href="#cafes">Cafés</a><br><a href="#owners">For café owners</a></div>
+    </div>
+    <div class="copy" id="copy">© 2026 Coffee With Stranger. Made with ☕ in Bengaluru by Moorthi R</div>
+  </div>
+</footer>
+
+<!-- My matches modal -->
+<div class="overlay" id="matchOv" role="dialog" aria-modal="true" aria-label="My matches">
+  <div class="modal">
+    <button class="x" data-close="matchOv" aria-label="Close">✕</button>
+    <h2 id="mmTitle">My matches</h2>
+    <p id="mmSub" style="color:var(--muted)"></p>
+    <button type="button" class="link-btn" id="alertBtn" style="margin:0 0 10px">Turn on alerts on this device</button>
+    <div id="mmBody"></div>
+  </div>
+</div>
+
+<!-- Sign in modal -->
+<div class="overlay" id="signOv" role="dialog" aria-modal="true" aria-label="Sign in">
+  <div class="modal">
+    <button class="x" data-close="signOv" aria-label="Close">✕</button>
+    <h2>Sign in</h2>
+    <p style="color:var(--muted);margin-bottom:16px">Enter the phone number you registered with.</p>
+    <div class="field"><label for="s_phone">Phone number</label><input type="tel" id="s_phone" inputmode="tel"></div>
+    <div class="err" id="signErr"></div>
+    <button class="btn btn-primary" id="signGo" style="width:100%">See my matches</button>
+  </div>
+</div>
+
+<!-- Admin modal -->
+<div class="overlay" id="adminOv" role="dialog" aria-modal="true" aria-label="Admin">
+  <div class="modal wide">
+    <button class="x" data-close="adminOv" aria-label="Close">✕</button>
+    <div id="adminLogin">
+      <h2>Admin sign in</h2>
+      <p style="color:var(--muted);margin-bottom:16px">Only the Coffee With Stranger team can manage cafés.</p>
+      <div class="field" id="a_emailField"><label for="a_email">Admin email</label><input type="email" id="a_email" autocomplete="username"></div>
+      <div class="field"><label for="a_pass">Admin password</label><input type="password" id="a_pass" autocomplete="current-password"></div>
+      <div class="err" id="adminErr"></div>
+      <button class="btn btn-primary" id="adminGo">Sign in</button>
+    </div>
+    <div id="adminApp" class="hidden">
+      <h2>Admin dashboard</h2>
+      <div class="stats" id="stats"></div>
+      <div class="admin-cols">
+        <div>
+          <div class="panel">
+            <h3>Add a partner café</h3>
+            <form id="cafeForm">
+              <div class="field"><label for="c_name">Café name</label><input type="text" id="c_name" required></div>
+              <div class="grid2">
+                <div class="field"><label for="c_area">Area</label><select id="c_area"></select></div>
+                <div class="field"><label for="c_phone">Café phone</label><input type="tel" id="c_phone"></div>
+              </div>
+              <div class="field"><label for="c_addr">Address or landmark</label><input type="text" id="c_addr"></div>
+              <div class="grid2">
+                <div class="field"><label for="c_owner">Owner or manager</label><input type="text" id="c_owner"></div>
+                <div class="field"><label for="c_hours">Opening hours</label><input type="text" id="c_hours"></div>
+              </div>
+              <div class="err" id="cafeErr"></div>
+              <button class="btn btn-primary" type="submit">Add café and create QR</button>
+            </form>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <h3 id="reqHead">Café requests from owners</h3>
+            <div id="reqList"></div>
+          </div>
+        </div>
+        <div>
+          <div class="panel">
+            <h3>Partner cafés</h3>
+            <div id="adminCafes"></div>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <h3>Members</h3>
+            <p style="font-size:14.5px;color:var(--muted);margin-bottom:12px">Download everyone who registered, with phone numbers and emails. Only you can see these.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" id="csvBtn">Download members (CSV)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:20px">
+        <h3 id="memHead">Members</h3>
+        <p style="font-size:14.5px;color:var(--muted);margin-bottom:12px">Everyone who registered, with phone and email. Only you can see these. People with new matches they have not seen come first. Tap WhatsApp to send them their matches.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" id="mailAllBtn">Email everyone with new matches</button>
+          <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="autoMail"> Send emails automatically while this page is open</label>
+        </div>
+        <p id="mailState" style="font-size:13.5px;color:var(--muted);margin:0 0 12px"></p>
+        <div class="field"><input type="search" id="memberSearch" placeholder="Search by name, phone, area or occupation" aria-label="Search members"></div>
+        <div id="memberList"></div>
+      </div>
+      <div class="admin-note" id="adminNote"></div>
+      <div style="margin-top:14px"><button class="btn btn-ghost btn-sm" id="adminOut">Sign out</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============ SETTINGS (edit these) ============ */
+const CFG = {
+  launchDate: '2026-10-10',        // first free day (YYYY-MM-DD)
+  freeDays: 7,                     // free period length
+  whatsapp: '919741239979',
+  adminUid: 'uBVoyGcGxycBffmaLdSlGwPVykw1',// Firebase Authentication > Users > your admin account > User UID
+  emailjs: { serviceId:'service_41p6hvf', templateId:'template_cm5nj8n', publicKey:'mRj4HvDGfPRM3Ga9y' }, // optional: sends emails to members (see SETUP.md)
+  notifyUrl: '',                   // optional: Formspree form URL, emails you every new café request
+  demoPassword: 'cws-demo'         // used ONLY while Firebase is not connected (demo mode)
+};
+/* Firebase Console > Project settings > Your apps > Web app > copy the config values here */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCXNHs9MJDio7Lmo2o_JLTs4pgCy5OY4YQ',
+  authDomain: 'coffee-with-stranger-ac0ad.firebaseapp.com',
+  projectId: 'coffee-with-stranger-ac0ad',
+  storageBucket: 'coffee-with-stranger-ac0ad.firebasestorage.app',
+  messagingSenderId: '694078156482',
+  appId: '1:694078156482:web:5ad395ba47206dd578d55b'
+};
+
+/* ============ LISTS ============ */
+const CATS = [
+  {id:'it',label:'IT employee',icon:'💻'},
+  {id:'doctor',label:'Doctor',icon:'🩺'},
+  {id:'police',label:'Police',icon:'👮'},
+  {id:'lawyer',label:'Lawyer',icon:'⚖️'},
+  {id:'business',label:'Business person',icon:'💼'},
+  {id:'startup',label:'Startup ideas people',icon:'💡'},
+  {id:'realestate',label:'Real estate',icon:'🏢'},
+  {id:'film',label:'Film industry',icon:'🎬',sub:'short film artists, directors, models'},
+  {id:'construction',label:'Construction',icon:'🏗️'},
+  {id:'students',label:'Students',icon:'🎓'},
+  {id:'others',label:'Others',icon:'✨'}
+];
+const FIELDS = ['Technology','Startups','Movies and cinema','Music','Finance','Law','Healthcare','Real estate','Photography','Design and art','Writing','Social work','Politics and policy','Education','Sports'];
+const LIKES = ['Travel','Books','Fitness','Food','Gaming','Cricket','Trekking','Podcasts','Fashion','Pets','Dancing','Volunteering','Meditation','Cooking'];
+const AREAS = ['Indiranagar','Koramangala','Whitefield','HSR Layout','Jayanagar','JP Nagar','MG Road','Malleshwaram','Electronic City','Marathahalli','BTM Layout','Yelahanka','Other'];
+
+/* ============ DATA LAYER ============
+   Connected mode: Firebase Firestore, shared by every visitor and the admin.
+   Demo mode (Firebase not configured): this browser's localStorage only. */
+const FB_ON = !!(window.firebase && FIREBASE_CONFIG.apiKey && !/^PASTE/.test(FIREBASE_CONFIG.apiKey));
+let fs=null, auth=null, onData=function(){};
+const cache={users:[],cafes:[],requests:[],pairs:{},contacts:[],notifs:[]};
+const synced={users:{},cafes:{},requests:{},pairs:{}};
+const stable=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
+const lget=(k,d)=>{ try{ const v=localStorage.getItem('cws_'+k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+const lset=(k,v)=>{ try{ localStorage.setItem('cws_'+k,JSON.stringify(v)); }catch(e){} };
+const DB = {
+  ready: Promise.resolve(),
+  get(k,d){ if(k==='me'||!FB_ON) return lget(k,d); return cache[k]!==undefined?cache[k]:d; },
+  set(k,v){
+    if(k==='me'||!FB_ON){ lset(k,v); return Promise.resolve(); }
+    cache[k]=v; const jobs=[];
+    const put=(id,item)=>{ const data=JSON.parse(JSON.stringify(item)); const st=stable(data); if(synced[k][id]===st) return; synced[k][id]=st; jobs.push(fs.collection(k).doc(id).set(data,{merge:true})); };
+    if(Array.isArray(v)){
+      v.forEach(it=>put(it.id,it));
+      if(k==='cafes'||k==='requests'){ const keep=new Set(v.map(x=>x.id)); Object.keys(synced[k]).forEach(id=>{ if(!keep.has(id)){ delete synced[k][id]; jobs.push(fs.collection(k).doc(id).delete()); } }); }
+    } else { Object.keys(v).forEach(id=>put(id,v[id])); }
+    return Promise.all(jobs).catch(err=>{ console.error(err); toast(err.code==='permission-denied'?'Could not save: permission denied. Check the Firestore rules.':'Could not save. Check your internet connection.'); });
+  },
+  start(){
+    if(!FB_ON) return;
+    firebase.initializeApp(FIREBASE_CONFIG); fs=firebase.firestore(); auth=firebase.auth();
+    const watch=k=>new Promise(res=>{
+      fs.collection(k).onSnapshot(snap=>{
+        const arr=[], obj={}; synced[k]={};
+        snap.forEach(d=>{ const data=d.data(); if(k==='pairs') obj[d.id]=data; else { data.id=d.id; arr.push(data); } synced[k][d.id]=stable(data); });
+        cache[k]=(k==='pairs')?obj:arr; res(); onData();
+      },err=>{ console.error(err); res(); });
+    });
+    DB.ready=Promise.race([Promise.all([watch('users'),watch('cafes'),watch('pairs')]),new Promise(r=>setTimeout(r,7000))]);
+    auth.onAuthStateChanged(user=>{
+      adminOn=!!(user && user.uid===CFG.adminUid);
+      if(adminOn){ DB.watchRequests(); DB.watchContacts(); DB.watchNotifs(); } else { DB.unwatchRequests(); DB.unwatchContacts(); DB.unwatchNotifs(); }
+      if($('#adminOv').classList.contains('on')) showAdmin();
+      onData();
+    });
+  },
+  watchRequests(){
+    if(DB._rq) return;
+    DB._rq=fs.collection('requests').onSnapshot(snap=>{
+      const arr=[]; synced.requests={};
+      snap.forEach(d=>{ const x=d.data(); x.id=d.id; arr.push(x); synced.requests[d.id]=stable(x); });
+      arr.sort((a,b)=>(a.created||0)-(b.created||0)); cache.requests=arr; onData();
+    },err=>console.error(err));
+  },
+  unwatchRequests(){ if(DB._rq){ DB._rq(); DB._rq=null; } cache.requests=[]; synced.requests={}; },
+  watchContacts(){
+    if(DB._ct) return;
+    DB._ct=fs.collection('contacts').onSnapshot(snap=>{ const arr=[]; snap.forEach(d=>arr.push(d.data())); cache.contacts=arr; onData(); },err=>console.error(err));
+  },
+  watchNotifs(){
+    if(DB._nf) return;
+    DB._nf=fs.collection('notifs').onSnapshot(snap=>{ const arr=[]; snap.forEach(d=>arr.push(d.data())); cache.notifs=arr; onData(); },err=>console.error(err));
+  },
+  unwatchNotifs(){ if(DB._nf){ DB._nf(); DB._nf=null; } cache.notifs=[]; },
+  unwatchContacts(){ if(DB._ct){ DB._ct(); DB._ct=null; } cache.contacts=[]; },
+  async phoneLookup(h){ await DB.ready; if(!FB_ON) return (lget('phones',{}))[h]||null; const d=await fs.collection('phones').doc(h).get(); return d.exists?d.data().uid:null; },
+  async phoneSet(h,id){ if(!FB_ON){ const m=lget('phones',{}); m[h]=id; lset('phones',m); return; } await fs.collection('phones').doc(h).set({uid:id}); },
+  async contactSet(c){ if(!FB_ON){ const m=lget('contacts',{}); m[c.id]=c; lset('contacts',m); return; } await fs.collection('contacts').doc(c.id).set(c,{merge:true}); },
+  async contactsAll(){ if(!FB_ON) return Object.values(lget('contacts',{})); const sn=await fs.collection('contacts').get(); return sn.docs.map(d=>d.data()); }
+};
+async function phoneHash(p){
+  const t='cws:'+p;
+  if(window.crypto&&crypto.subtle){ const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+  let h=5381; for(const c of t) h=((h<<5)+h+c.charCodeAt(0))|0; return 'L'+(h>>>0).toString(16);
+}
+function contactMap(){
+  const m={};
+  if(FB_ON) cache.contacts.forEach(c=>m[c.id]=c); else Object.values(lget('contacts',{})).forEach(c=>m[c.id]=c);
+  return m;
+}
+function notifyOwner(subject,fields){
+  if(!CFG.notifyUrl) return;
+  fetch(CFG.notifyUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(Object.assign({_subject:subject},fields))}).catch(()=>{});
+}
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,10);
+const catLabel = id => (CATS.find(c=>c.id===id)||{label:'Others'}).label;
+const cleanPhone = p => String(p).replace(/\D/g,'').slice(-10);
+
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),3600); }
+function openOv(id){ $('#'+id).classList.add('on'); document.body.style.overflow='hidden'; }
+function closeOv(id){ $('#'+id).classList.remove('on'); if(!document.querySelector('.overlay.on')) document.body.style.overflow=''; }
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeOv(b.dataset.close));
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('mousedown',e=>{ if(e.target===o) closeOv(o.id); }));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.on').forEach(o=>closeOv(o.id)); });
+
+/* ============ FREE WEEK BANNER ============ */
+(function(){
+  const end = new Date(CFG.launchDate+'T00:00:00').getTime() + CFG.freeDays*864e5;
+  const left = end - Date.now();
+  const el = $('#freeCount');
+  if(left>0){
+    const d=Math.floor(left/864e5), h=Math.floor(left%864e5/36e5);
+    el.textContent = d>0 ? d+' day'+(d>1?'s':'')+' left.' : h+' hours left.';
+  } else { $('#freeBar').innerHTML='The free launch week has ended. Registration is still open.'; }
+})();
+
+/* ============ FORM BUILDERS ============ */
+function chip(name,val,label,sub,checked){
+  return `<label class="chip"><input type="${name==='lookGender'?'radio':'checkbox'}" name="${name}" value="${esc(val)}" ${checked?'checked':''}><span>${label}${sub?` <small>(${esc(sub)})</small>`:''}</span></label>`;
+}
+function buildForm(){
+  $('#f_place').innerHTML = '<option value="">Select your area</option>'+AREAS.map(a=>`<option>${a}</option>`).join('');
+  $('#f_cat').innerHTML = '<option value="">Select your occupation</option>'+CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.label}${c.sub?' ('+c.sub+')':''}</option>`).join('');
+  $('#fieldChips').innerHTML = FIELDS.map(f=>chip('field',f,esc(f))).join('');
+  $('#likeChips').innerHTML = LIKES.map(f=>chip('like',f,esc(f))).join('');
+  $('#genderChips').innerHTML = ['Male','Female','Anyone'].map((g,i)=>chip('lookGender',g,g==='Anyone'?'Anyone':'A '+g.toLowerCase(),'',i===2)).join('');
+  $('#wantChips').innerHTML = CATS.map(c=>chip('want',c.id,c.icon+' '+esc(c.label),c.sub)).join('');
+  $('#c_area').innerHTML = AREAS.map(a=>`<option>${a}</option>`).join('');
+  refreshCafeSelect();
+}
+function refreshCafeSelect(selected){
+  const cafes = DB.get('cafes',[]);
+  const sel = $('#f_cafe');
+  const param = selected || new URLSearchParams(location.search).get('cafe');
+  let html = '<option value="">Any partner café</option>' + cafes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} · ${esc(c.area)}</option>`).join('');
+  const pName = new URLSearchParams(location.search).get('n');
+  if(param && !cafes.find(c=>c.id===param) && pName) html += `<option value="${esc(param)}">${esc(pName)}</option>`;
+  sel.innerHTML = html;
+  if(param) sel.value = param;
+}
+let wantAll=false;
+$('#selAll').onclick=()=>{ wantAll=!wantAll; document.querySelectorAll('input[name=want]').forEach(i=>i.checked=wantAll); $('#selAll').textContent = wantAll?'Clear all groups':'Select all groups'; };
+
+/* ============ QR SCAN CONTEXT ============ */
+const params = new URLSearchParams(location.search);
+const scanCafeId = params.get('cafe');
+function scanCafeName(){
+  const c = DB.get('cafes',[]).find(x=>x.id===scanCafeId);
+  return c ? c.name : (params.get('n') || '');
+}
+if(scanCafeId){
+  $('#scanBox').classList.add('on');
+  $('#scanCafe').textContent = scanCafeName() || 'a partner café';
+  setTimeout(()=>{ const r=$('#register'); if(r) r.scrollIntoView(); },300);
+}
+
+/* ============ REGISTER ============ */
+function checked(name){ return [...document.querySelectorAll(`input[name=${name}]:checked`)].map(i=>i.value); }
+$('#regForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const err=$('#regErr'); err.textContent='';
+  const phone=cleanPhone($('#f_phone').value), email=$('#f_email').value.trim();
+  const u = {
+    name:$('#f_name').value.trim(), age:parseInt($('#f_age').value,10),
+    gender:$('#f_gender').value, area:$('#f_place').value,
+    cat:$('#f_cat').value, role:$('#f_role').value.trim(), fields:checked('field'), likes:checked('like'),
+    about:$('#f_about').value.trim(), lookGender:(checked('lookGender')[0]||'Anyone'), wants:checked('want'),
+    cafe:$('#f_cafe').value, slot:$('#f_slot').value
+  };
+  if(!u.name) return err.textContent='Please enter your name.';
+  if(!(u.age>=18)) return err.textContent='You must be 18 or above to register.';
+  if(phone.length!==10) return err.textContent='Enter a valid 10-digit phone number.';
+  if(!u.gender) return err.textContent='Please select your gender.';
+  if(!u.area) return err.textContent='Please select your area.';
+  if(!u.cat) return err.textContent='Please select your occupation group.';
+  if(!u.wants.length) return err.textContent='Pick at least one group you would like to meet.';
+  if(!$('#f_ok').checked) return err.textContent='Please tick the confirmation box.';
+
+  const btn=e.target.querySelector('button[type=submit]'); btn.disabled=true;
+  try{
+    const h=await phoneHash(phone);
+    const exId=await DB.phoneLookup(h);
+    const users=DB.get('users',[]);
+    const found=exId?users.find(x=>x.id===exId):null;
+    let me;
+    if(found){ Object.assign(found,u); me=found; }
+    else { u.id=exId||uid(); u.created=Date.now(); u.seen=[]; users.push(u); me=u; }
+    await DB.set('users',users);
+    await DB.contactSet({id:me.id,name:u.name,phone:phone,email:email,created:me.created||Date.now()});
+    if(!exId) await DB.phoneSet(h,me.id);
+    DB.set('me',me.id);
+    toast('You are registered. Finding your matches…');
+    if(email) sendEmail(email,firstName(me.name),'You are registered with Coffee With Stranger',regMail(me));
+    updateBell();
+    setTimeout(()=>openMatches(),700);
+  }catch(ex){ console.error(ex); err.textContent='We could not save your registration. Please check your internet and try again.'; }
+  finally{ btn.disabled=false; }
+});
+
+/* ============ MATCHING ============ */
+function genderOK(pref,g){ return pref==='Anyone' || pref===g; }
+const LEVELS={3:'Perfect match',2:'Good match',1:'Also available'};
+function matchesFor(me){
+  const users = DB.get('users',[]), mw = me.wants||[];
+  return users.filter(u=>u.id!==me.id && genderOK(me.lookGender||'Anyone',u.gender) && genderOK(u.lookGender||'Anyone',me.gender))
+    .map(u=>{
+      const sameArea = me.area===u.area || me.area==='Other' || u.area==='Other';
+      const iWant = mw.includes(u.cat), theyWant = (u.wants||[]).includes(me.cat);
+      const level = (iWant&&theyWant&&sameArea) ? 3 : (((iWant||theyWant)&&sameArea)||(iWant&&theyWant)) ? 2 : 1;
+      const shared = [...new Set([...(u.fields||[]).filter(f=>(me.fields||[]).includes(f)),...(u.likes||[]).filter(l=>(me.likes||[]).includes(l))])];
+      return {u,shared,mutual:theyWant,level,sameArea,score:level*100+shared.length*2+(me.slot===u.slot?3:0)};
+    }).sort((a,b)=>b.score-a.score);
+}
+const pairId=(a,b)=>[a,b].sort().join('_');
+function newCount(me){ return me ? matchesFor(me).filter(m=>!(me.seen||[]).includes(m.u.id)).length : 0; }
+function getMe(){ const id=DB.get('me',null); return id ? DB.get('users',[]).find(u=>u.id===id) : null; }
+let lastNew=null;
+function checkNewMatches(){
+  const me=getMe();
+  if(!me){ lastNew=null; return; }
+  const n=newCount(me);
+  if(lastNew!==null && n>lastNew){
+    toast('🔔 Someone new is available to meet. Tap My matches to choose, or wait for your perfect match.');
+    try{ if('Notification' in window && Notification.permission==='granted') new Notification('Coffee With Stranger',{body:'A new person matches your interests. Open My matches.'}); }catch(e){}
+  }
+  lastNew=n;
+}
+function updateBell(){
+  const me=getMe(), n=newCount(me), d=$('#bellDot');
+  d.textContent=n; d.classList.toggle('hidden',!n);
+}
+function pickCafe(a,b){
+  const cafes=DB.get('cafes',[]);
+  return cafes.find(c=>c.id===a.cafe) || cafes.find(c=>c.id===b.cafe) || cafes.find(c=>c.area===a.area) || cafes.find(c=>c.area===b.area) || cafes[0] || null;
+}
+
+/* ============ MATCHES MODAL ============ */
+function openMatches(){
+  const me=getMe();
+  if(!me){ openOv('signOv'); return; }
+  const list=matchesFor(me), pairs=DB.get('pairs',{}), cafes=DB.get('cafes',[]);
+  const seenBefore = me.seen||[];
+  $('#mmTitle').textContent='Hi '+me.name.split(' ')[0]+', your matches';
+  const perfect=list.filter(m=>m.level===3).length;
+  $('#mmSub').textContent= list.length ? list.length+' '+(list.length>1?'people are':'person is')+' available to meet'+(perfect?' ('+perfect+' perfect match'+(perfect>1?'es':'')+')':'')+'. Tap OK on anyone you like, or wait for your perfect match.' : '';
+  let html='';
+  if(!list.length){
+    html=`<div class="empty"><div class="ic">☕</div><h3>No matches yet</h3><p style="margin-top:6px">Nobody else is available yet. We'll show people here as soon as they register, and our team may also message you. Tip: choosing more groups to meet gives you more options.</p></div>`;
+  } else {
+    html=list.map(m=>{
+      const u=m.u, p=pairs[pairId(me.id,u.id)]||{ok:{}};
+      const iOk=!!p.ok[me.id], theyOk=!!p.ok[u.id], both=iOk&&theyOk;
+      const isNew=!seenBefore.includes(u.id);
+      let action='';
+      if(both){
+        const c=cafes.find(x=>x.id===p.cafe);
+        const here = scanCafeId && p.cafe===scanCafeId;
+        const checkedIn = p.checkin&&p.checkin[me.id];
+        action=`<div class="confirmed">🎉 <b>You both said yes!</b><br>Meet at <b>${c?esc(c.name)+', '+esc(c.area):'a partner café (we will confirm shortly)'}</b> in the ${esc(me.slot.split(' (')[0].toLowerCase())} slot.${c&&c.address?'<br>'+esc(c.address):''}<br>When you arrive, scan the café's QR code to check in.
+          <div class="row" style="margin-top:12px">${checkedIn?'<span class="btn btn-yellow btn-sm">✅ Checked in</span>':`<button class="btn btn-yellow btn-sm" data-checkin="${esc(u.id)}">${here?'Check in now':'I have arrived'}</button>`}</div></div>`;
+      } else if(iOk){
+        action=`<div class="waiting">✔ You said OK. Waiting for ${esc(u.name.split(' ')[0])} to respond.</div>`;
+      } else {
+        action=`<div class="row"><button class="btn btn-primary btn-sm" data-ok="${esc(u.id)}">OK, let's meet</button><button class="btn btn-ghost btn-sm" data-skip="${esc(u.id)}">Not now</button></div>`;
+      }
+      return `<div class="match ${isNew?'new':''}">
+        <div class="top"><div class="avatar">${esc(u.name.charAt(0).toUpperCase())}</div>
+          <div><h3>${esc(u.name.split(' ')[0])}, ${esc(u.age)}<span class="tag-mutual">${LEVELS[m.level]}</span></h3>
+          <small>${esc(catLabel(u.cat))}${u.role?' · '+esc(u.role):''} · ${esc(u.area)}</small></div></div>
+        ${m.shared.length?`<div class="chips-static">${m.shared.map(s=>`<span class="chip-s">${esc(s)}</span>`).join('')}</div>`:''}
+        ${u.about?`<p style="color:var(--muted);font-size:15px">${esc(u.about)}</p>`:''}
+        ${action}</div>`;
+    }).join('');
+  }
+  $('#mmBody').innerHTML=html;
+  // mark as seen
+  const users=DB.get('users',[]), mm=users.find(x=>x.id===me.id);
+  if(mm){ mm.seen=list.map(m=>m.u.id).sort(); DB.set('users',users); } updateBell();
+  openOv('matchOv');
+}
+$('#mmBody').addEventListener('click',e=>{
+  const me=getMe(); if(!me) return;
+  const ok=e.target.closest('[data-ok]'), skip=e.target.closest('[data-skip]'), ci=e.target.closest('[data-checkin]');
+  const pairs=DB.get('pairs',{});
+  if(ok){
+    const other=DB.get('users',[]).find(x=>x.id===ok.dataset.ok);
+    const id=pairId(me.id,other.id);
+    const p=pairs[id]||(pairs[id]={ok:{},cafe:null,checkin:{}});
+    p.ok[me.id]=true; DB.set('pairs',pairs);
+    if(other.demo){ // sample members answer automatically
+      setTimeout(()=>{ const pp=DB.get('pairs',{}); pp[id].ok[other.id]=true; const c=pickCafe(me,other); pp[id].cafe=c?c.id:null; DB.set('pairs',pp); openMatches(); toast('🎉 '+other.name.split(' ')[0]+' said yes too!'); },900);
+    } else if(p.ok[other.id]){ const c=pickCafe(me,other); p.cafe=c?c.id:null; DB.set('pairs',pairs); toast('🎉 It is a match!'); }
+    else toast('Sent. We will tell you when they respond.');
+    openMatches();
+  }
+  if(skip){
+    const users=DB.get('users',[]), m=users.find(x=>x.id===me.id);
+    m.hidden=(m.hidden||[]); m.hidden.push(skip.dataset.skip); DB.set('users',users);
+    toast('Skipped.'); openMatches();
+  }
+  if(ci){
+    const id=pairId(me.id,ci.dataset.checkin), p=pairs[id];
+    p.checkin=p.checkin||{}; p.checkin[me.id]=true; DB.set('pairs',pairs);
+    toast('✅ Checked in. Enjoy your coffee!'); openMatches();
+  }
+});
+// hide skipped people
+const _mf=matchesFor;
+matchesFor=function(me){ const h=me.hidden||[]; return _mf(me).filter(m=>!h.includes(m.u.id)); };
+$('#alertBtn').onclick=async()=>{
+  if(!('Notification' in window)){ toast('This browser does not support alerts.'); return; }
+  const r=await Notification.requestPermission();
+  toast(r==='granted'?'Alerts are on. You will be told when the site is open.':'Alerts are blocked in your browser settings.');
+  $('#alertBtn').classList.toggle('hidden',r==='granted');
+};
+$('#bellBtn').onclick=()=>{ getMe()?openMatches():openOv('signOv'); };
+$('#signinBtn').onclick=()=>openOv('signOv');
+$('#signGo').onclick=async()=>{
+  const p=cleanPhone($('#s_phone').value);
+  if(p.length!==10){ $('#signErr').textContent='Enter a valid 10-digit phone number.'; return; }
+  const id=await DB.phoneLookup(await phoneHash(p));
+  const u=id && DB.get('users',[]).find(x=>x.id===id);
+  if(!u){ $('#signErr').textContent='No profile found for this number. Please register first.'; return; }
+  $('#signErr').textContent=''; DB.set('me',u.id); closeOv('signOv'); updateBell(); openMatches();
+};
+
+/* ============ PUBLIC CAFÉ LIST ============ */
+function renderCafes(){
+  const cafes=DB.get('cafes',[]);
+  let html=cafes.map(c=>`<div class="cafe"><span class="badge">Live</span><h3>${esc(c.name)}</h3><p>${esc(c.area)}${c.address?' · '+esc(c.address):''}</p>${c.hours?`<p>Open ${esc(c.hours)}</p>`:''}<a class="btn btn-primary btn-sm" href="?cafe=${encodeURIComponent(c.id)}&n=${encodeURIComponent(c.name)}#register">Register here</a></div>`).join('');
+  const live=new Set(cafes.map(c=>c.area));
+  ['Indiranagar','Koramangala','Whitefield'].filter(a=>!live.has(a)).forEach(a=>{
+    html+=`<div class="cafe"><span class="badge soon">Coming soon</span><h3>${a}</h3><p>We are looking for a café partner in ${a}.</p><a class="btn btn-ghost btn-sm" href="#owners">Partner with us</a></div>`;
+  });
+  $('#cafeGrid').innerHTML=html;
+}
+
+/* ============ CAFÉ OWNER REQUEST ============ */
+$('#ownerForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const r={id:uid(),name:$('#o_name').value.trim(),owner:$('#o_owner').value.trim(),phone:$('#o_phone').value.trim(),email:$('#o_email').value.trim(),addr:$('#o_addr').value.trim(),hours:$('#o_hours').value.trim(),created:Date.now()};
+  if(!r.name||!r.owner||!r.phone||!r.addr){ $('#ownerErr').textContent='Please fill in all required fields.'; return; }
+  $('#ownerErr').textContent='';
+  const btn=e.target.querySelector('button[type=submit]'); btn.disabled=true;
+  const msg='Hello, I would like to list my café on Coffee With Stranger.\nCafé: '+r.name+'\nName: '+r.owner+'\nPhone: '+r.phone+'\nArea: '+r.addr+(r.hours?'\nHours: '+r.hours:'');
+  $('#ownerWa').href='https://wa.me/'+CFG.whatsapp+'?text='+encodeURIComponent(msg);
+  try{
+    if(FB_ON){ await fs.collection('requests').doc(r.id).set(r); }
+    else { const reqs=lget('requests',[]); reqs.push(r); lset('requests',reqs); }
+    notifyOwner('New café request: '+r.name,{cafe:r.name,owner:r.owner,phone:r.phone,email:r.email,address:r.addr,hours:r.hours});
+    e.target.reset(); $('#ownerDone').classList.remove('hidden'); toast('Request received. We will call you within 48 hours.');
+  }catch(ex){
+    console.error(ex);
+    $('#ownerErr').textContent='We could not send the request online. Please tap the WhatsApp button below to send it to us directly.';
+    $('#ownerDone').classList.remove('hidden');
+  }
+  finally{ btn.disabled=false; }
+});
+
+/* ============ ADMIN (hidden) ============
+   Open with  yoursite.com/#admin  or click the © line in the footer 5 times. */
+let adminOn = false;
+function openAdmin(){ openOv('adminOv'); showAdmin(); }
+function showAdmin(){
+  $('#adminLogin').classList.toggle('hidden',adminOn);
+  $('#adminApp').classList.toggle('hidden',!adminOn);
+  $('#a_emailField').classList.toggle('hidden',!FB_ON);
+  $('#adminNote').textContent = FB_ON
+    ? 'Connected: members, cafés and requests are shared across all devices. QR codes link to '+siteUrl()+'. Open this admin page from your live website so the QR links are correct.'
+    : 'Demo mode: data is saved in this browser only. Connect Firebase (see SETUP.md) so cafés and requests are shared across all devices.';
+  if(adminOn) renderAdmin();
+}
+$('#adminGo').onclick=async()=>{
+  const err=$('#adminErr'); err.textContent='';
+  if(!FB_ON){
+    if($('#a_pass').value===CFG.demoPassword){ adminOn=true; $('#a_pass').value=''; showAdmin(); } else err.textContent='Wrong password.';
+    return;
+  }
+  try{
+    const cred=await auth.signInWithEmailAndPassword($('#a_email').value.trim(),$('#a_pass').value);
+    if(cred.user.uid!==CFG.adminUid){ await auth.signOut(); err.textContent='This account is not the admin account.'; return; }
+    $('#a_pass').value='';
+  }catch(ex){ err.textContent='Sign-in failed. Check the email and password.'; }
+};
+$('#a_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#adminGo').click(); });
+$('#adminOut').onclick=()=>{ adminOn=false; if(FB_ON&&auth) auth.signOut(); closeOv('adminOv'); showAdmin(); };
+let clicks=0,ct; $('#copy').onclick=()=>{ clicks++; clearTimeout(ct); ct=setTimeout(()=>clicks=0,1500); if(clicks>=5){ clicks=0; openAdmin(); } };
+$('#brand').addEventListener('click',()=>{});
+window.addEventListener('hashchange',()=>{ if(location.hash==='#admin') openAdmin(); });
+if(location.hash==='#admin') setTimeout(openAdmin,200);
+
+function siteUrl(){ return location.origin+location.pathname; }
+function cafeLink(c){ return siteUrl()+'?cafe='+encodeURIComponent(c.id)+'&n='+encodeURIComponent(c.name); }
+
+function renderAdmin(){
+  if(!adminOn) return;
+  const users=DB.get('users',[]), cafes=DB.get('cafes',[]), pairs=Object.values(DB.get('pairs',{}));
+  $('#stats').innerHTML=[
+    [users.length,'Members'],[cafes.length,'Partner cafés'],
+    [pairs.filter(p=>Object.keys(p.ok).length>1).length,'Confirmed meetups'],
+    [pairs.reduce((n,p)=>n+Object.keys(p.checkin||{}).length,0),'Check-ins']
+  ].map(s=>`<div class="stat"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('');
+
+  const box=$('#adminCafes');
+  box.innerHTML = cafes.length ? cafes.map(c=>`<div class="acafe" data-id="${esc(c.id)}"><div class="qr" id="qr_${esc(c.id)}"></div>
+    <div class="info"><b>${esc(c.name)}</b><br>${esc(c.area)}${c.address?' · '+esc(c.address):''}<br>${c.owner?esc(c.owner)+' · ':''}${esc(c.phone||'')}${c.hours?'<br>Open '+esc(c.hours):''}</div>
+    <div class="acts"><button class="btn btn-ghost btn-sm" data-dl="${esc(c.id)}">Download QR</button><button class="btn btn-danger btn-sm" data-del="${esc(c.id)}">Remove</button></div></div>`).join('')
+    : '<p style="color:var(--muted)">No cafés yet. Add your first partner on the left.</p>';
+  cafes.forEach(c=>{
+    const el=document.getElementById('qr_'+c.id);
+    if(el && window.QRCode){ new QRCode(el,{text:cafeLink(c),width:96,height:96,correctLevel:QRCode.CorrectLevel.M}); }
+    else if(el){ el.textContent='QR unavailable'; }
+  });
+
+  const reqs=DB.get('requests',[]);
+  $('#reqHead').textContent='Café requests from owners'+(reqs.length?' ('+reqs.length+' pending)':'');
+  $('#reqList').innerHTML = reqs.length ? reqs.map(r=>`<div class="req"><b>${esc(r.name)}</b> · ${esc(r.addr)}<br>${esc(r.owner)} · ${esc(r.phone)}${r.hours?' · '+esc(r.hours):''}
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary btn-sm" data-approve="${esc(r.id)}">Approve and add</button><button class="btn btn-danger btn-sm" data-reject="${esc(r.id)}">Reject</button></div></div>`).join('')
+    : '<p style="color:var(--muted);font-size:14.5px">No pending requests.</p>';
+  renderMembers();
+  if($('#autoMail').checked) sendPendingEmails(false);
+}
+$('#cafeForm').addEventListener('submit',e=>{
+  e.preventDefault(); if(!adminOn) return;
+  const c={id:uid(),name:$('#c_name').value.trim(),area:$('#c_area').value,phone:$('#c_phone').value.trim(),address:$('#c_addr').value.trim(),owner:$('#c_owner').value.trim(),hours:$('#c_hours').value.trim()};
+  if(!c.name){ $('#cafeErr').textContent='Enter the café name.'; return; }
+  $('#cafeErr').textContent='';
+  const cafes=DB.get('cafes',[]); cafes.push(c); DB.set('cafes',cafes);
+  e.target.reset(); renderAdmin(); renderCafes(); refreshCafeSelect(); toast('Café added. Its QR code is ready.');
+});
+$('#adminApp').addEventListener('click',e=>{
+  if(!adminOn) return;
+  const del=e.target.closest('[data-del]'), dl=e.target.closest('[data-dl]'), ap=e.target.closest('[data-approve]'), rj=e.target.closest('[data-reject]');
+  if(del && confirm('Remove this café?')){ DB.set('cafes',DB.get('cafes',[]).filter(c=>c.id!==del.dataset.del)); renderAdmin(); renderCafes(); refreshCafeSelect(); }
+  if(dl){
+    const c=DB.get('cafes',[]).find(x=>x.id===dl.dataset.dl), cv=document.querySelector('#qr_'+c.id+' canvas');
+    if(cv){ const big=document.createElement('div'); new QRCode(big,{text:cafeLink(c),width:600,height:600,correctLevel:QRCode.CorrectLevel.M});
+      setTimeout(()=>{ const bc=big.querySelector('canvas'); const a=document.createElement('a'); a.download='QR-'+c.name.replace(/\W+/g,'-')+'.png'; a.href=bc.toDataURL('image/png'); a.click(); },200); }
+  }
+  if(ap){
+    const reqs=DB.get('requests',[]), r=reqs.find(x=>x.id===ap.dataset.approve);
+    const cafes=DB.get('cafes',[]); cafes.push({id:uid(),name:r.name,area:(AREAS.find(a=>a!=='Other'&&(r.addr||'').toLowerCase().includes(a.toLowerCase()))||'Other'),phone:r.phone,address:r.addr,owner:r.owner,hours:r.hours});
+    DB.set('cafes',cafes); DB.set('requests',reqs.filter(x=>x.id!==r.id)); renderAdmin(); renderCafes(); refreshCafeSelect(); toast('Café approved and added.');
+  }
+  if(rj){ DB.set('requests',DB.get('requests',[]).filter(x=>x.id!==rj.dataset.reject)); renderAdmin(); }
+});
+const firstName=n=>String(n||'').split(' ')[0];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const EMAILJS_ON=()=>!!(CFG.emailjs&&CFG.emailjs.publicKey&&CFG.emailjs.serviceId&&CFG.emailjs.templateId);
+function notifMap(){ const m={}; if(FB_ON) cache.notifs.forEach(n=>m[n.id]=n); else Object.assign(m,lget('notifs',{})); return m; }
+async function markNotified(u,list){
+  const old=(notifMap()[u.id]||{}).ids||[];
+  const rec={id:u.id,ids:[...new Set(old.concat(list.map(m=>m.u.id)))],at:Date.now()};
+  if(FB_ON){
+    const i=cache.notifs.findIndex(n=>n.id===u.id); if(i>=0) cache.notifs[i]=rec; else cache.notifs.push(rec);
+    await fs.collection('notifs').doc(u.id).set(rec).catch(e=>console.error(e));
+  } else { const m=lget('notifs',{}); m[u.id]=rec; lset('notifs',m); }
+}
+function pendingFor(u){ const told=(notifMap()[u.id]||{}).ids||[]; return matchesFor(u).filter(m=>!told.includes(m.u.id)); }
+function msgText(u,list){
+  if(!list.length) return null;
+  const top=list.slice(0,5).map(m=>firstName(m.u.name)+' ('+catLabel(m.u.cat)+', '+m.u.area+(m.level===3?', perfect match':'')+')').join('; ');
+  return 'Hi '+firstName(u.name)+', good news from Coffee With Stranger! '+list.length+(list.length>1?' people are':' person is')+' now available to meet: '+top+'. You can choose someone you like, or wait for your perfect match. Open '+siteUrl()+' and tap My matches. Sign in with the phone number you registered with.';
+}
+function memberMsg(u){
+  const pend=pendingFor(u), t=msgText(u,pend.length?pend:matchesFor(u));
+  return t||('Hi '+firstName(u.name)+', thank you for registering with Coffee With Stranger. We will message you as soon as someone is available to meet.');
+}
+function regMail(me){
+  const n=matchesFor(me).length;
+  return 'Hi '+firstName(me.name)+', you are registered with Coffee With Stranger. '+(n?n+(n>1?' people are':' person is')+' already available to meet. Open '+siteUrl()+' and tap My matches to choose someone, or wait for your perfect match.':'Nobody else is available yet, but we will let you know as soon as someone is. You can also open '+siteUrl()+' any time and tap My matches.');
+}
+async function sendEmail(to,name,subject,message){
+  if(!EMAILJS_ON()) return false;
+  const e=CFG.emailjs;
+  try{
+    const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:e.serviceId,template_id:e.templateId,user_id:e.publicKey,template_params:{to_email:to,to_name:name,subject:subject,message:message}})});
+    return !!(r&&r.ok);
+  }catch(x){ return false; }
+}
+let mailBusy=false, mailFailAt=0;
+async function sendPendingEmails(manual){
+  if(mailBusy||!EMAILJS_ON()||!adminOn) return 0;
+  if(!manual && Date.now()-mailFailAt<60000) return 0;
+  mailBusy=true; let sent=0, failed=false;
+  try{
+    const cm=contactMap();
+    for(const u of DB.get('users',[])){
+      const c=cm[u.id]; if(!c||!c.email) continue;
+      const list=pendingFor(u); if(!list.length) continue;
+      const ok=await sendEmail(c.email,firstName(u.name),'People are available to meet at Coffee With Stranger',msgText(u,list));
+      if(ok){ await markNotified(u,list); sent++; await sleep(1100); } else { failed=true; break; }
+    }
+  } finally { mailBusy=false; }
+  if(failed) mailFailAt=Date.now();
+  if(manual) toast(failed?'Some emails could not be sent. Check the EmailJS settings.':(sent+' email'+(sent===1?'':'s')+' sent.'));
+  if(sent) renderMembers();
+  return sent;
+}
+function renderMembers(){
+  if(!adminOn) return;
+  const users=DB.get('users',[]), cm=contactMap(), q=($('#memberSearch').value||'').toLowerCase().trim();
+  $('#mailState').textContent = EMAILJS_ON() ? 'Email sending is on.' : 'Email sending is not set up yet (see SETUP.md). Email buttons will open your mail app.';
+  let rows=users.map(u=>({u,c:cm[u.id]||{},ms:matchesFor(u),pend:pendingFor(u)}));
+  if(q) rows=rows.filter(r=>[r.u.name,r.c.phone,r.c.email,r.u.area,catLabel(r.u.cat),r.u.role].join(' ').toLowerCase().includes(q));
+  rows.sort((a,b)=>b.pend.length-a.pend.length||(b.u.created||0)-(a.u.created||0));
+  const toTell=rows.filter(r=>r.pend.length).length;
+  $('#memHead').textContent='Members ('+users.length+')'+(toTell?' · '+toTell+' to notify':'');
+  $('#memberList').innerHTML = rows.length ? rows.slice(0,200).map(r=>{
+    const u=r.u, c=r.c, perfect=r.ms.filter(m=>m.level===3).length;
+    const msg=memberMsg(u);
+    const wa=c.phone?'https://wa.me/91'+encodeURIComponent(c.phone)+'?text='+encodeURIComponent(msg):'';
+    const mail=c.email?(EMAILJS_ON()?`<button class="btn btn-ghost btn-sm" data-email="${esc(u.id)}">Send email</button>`:`<a class="btn btn-ghost btn-sm" href="mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('People are available to meet at Coffee With Stranger')}&body=${encodeURIComponent(msg)}">Email</a>`):'';
+    return `<div class="req"><b>${esc(u.name)}</b>, ${esc(u.age)} · ${esc(u.gender)} · ${esc(catLabel(u.cat))}${u.role?' ('+esc(u.role)+')':''} · ${esc(u.area)} · ${esc(u.slot||'')}<br>
+      📞 ${c.phone?esc(c.phone):'not loaded'}${c.email?' · ✉ '+esc(c.email):''}<br>
+      <span style="color:var(--muted)">Wants to meet: ${esc((u.wants||[]).map(catLabel).join(', '))} (${esc(u.lookGender||'Anyone')})</span><br>
+      <b>${r.ms.length}</b> available${perfect?', '+perfect+' perfect':''}${r.pend.length?' · <b>'+r.pend.length+' new, not told yet</b>':' · all told'}
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${wa?`<a class="btn btn-primary btn-sm" target="_blank" rel="noopener" data-notify="${esc(u.id)}" href="${esc(wa)}">WhatsApp${r.pend.length?' ('+r.pend.length+' new)':''}</a>`:''}${c.phone?`<a class="btn btn-ghost btn-sm" href="tel:+91${esc(c.phone)}">Call</a>`:''}${mail}</div></div>`;
+  }).join('') : '<p style="color:var(--muted);font-size:14.5px">No members yet.</p>';
+}
+$('#memberList').addEventListener('click',async e=>{
+  const a=e.target.closest('[data-notify]'), b=e.target.closest('[data-email]');
+  if(a){ const u=DB.get('users',[]).find(x=>x.id===a.dataset.notify); if(u){ const list=pendingFor(u); setTimeout(()=>markNotified(u,list).then(renderMembers),50); } }
+  if(b){
+    const u=DB.get('users',[]).find(x=>x.id===b.dataset.email), c=u&&contactMap()[u.id]; if(!u||!c) return;
+    b.disabled=true;
+    const list=pendingFor(u), ok=await sendEmail(c.email,firstName(u.name),'People are available to meet at Coffee With Stranger',memberMsg(u));
+    if(ok){ await markNotified(u,list); toast('Email sent to '+firstName(u.name)+'.'); } else toast('Email could not be sent. Check the EmailJS settings.');
+    renderMembers();
+  }
+});
+$('#mailAllBtn').onclick=()=>{ if(!EMAILJS_ON()){ toast('Email sending is not set up yet. See SETUP.md.'); return; } sendPendingEmails(true); };
+$('#autoMail').checked=!!lget('autoMail',false);
+$('#autoMail').addEventListener('change',()=>{ lset('autoMail',$('#autoMail').checked); if($('#autoMail').checked) sendPendingEmails(true); });
+$('#memberSearch').addEventListener('input',()=>renderMembers());
+$('#csvBtn').onclick=async()=>{
+  const users=DB.get('users',[]);
+  const cm={}; (await DB.contactsAll()).forEach(c=>cm[c.id]=c);
+  const head=['Name','Age','Gender','Phone','Email','Occupation','Role','Area','Interested in','Likes','Looking for','Wants to meet','Slot'];
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=users.map(u=>{ const c=cm[u.id]||{}; return [u.name,u.age,u.gender,c.phone||'',c.email||'',catLabel(u.cat),u.role,u.area,(u.fields||[]).join('; '),(u.likes||[]).join('; '),u.lookGender,(u.wants||[]).map(catLabel).join('; '),u.slot].map(q).join(','); });
+  const blob=new Blob([[head.map(q).join(',')].concat(rows).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cws-members.csv'; a.click();
+};
+
+/* ============ NAV ============ */
+$('#menuBtn').onclick=()=>$('#navLinks').classList.toggle('open');
+$('#navLinks').addEventListener('click',e=>{ if(e.target.tagName==='A') $('#navLinks').classList.remove('open'); });
+
+/* ============ INIT ============ */
+onData=function(){
+  try{
+    const sel=$('#f_cafe'), keep=sel?sel.value:'';
+    renderCafes(); refreshCafeSelect(keep||undefined); updateBell(); checkNewMatches();
+    if(adminOn) renderAdmin();
+    if($('#matchOv').classList.contains('on')) openMatches();
+  }catch(e){ console.error(e); }
+};
+DB.start(); buildForm(); renderCafes(); updateBell();
+DB.ready.then(()=>{ const me=getMe(), n=newCount(me); if(me&&n) setTimeout(()=>toast('🔔 '+n+' new '+(n>1?'people are':'person is')+' available to meet. Tap My matches.'),1200); lastNew=n; });
+</script>
+</body>
+</html>
