@@ -1,0 +1,183 @@
+<!-- ===== Coffee With Stranger add-on: cancel, reschedule, alerts, 1-5 star rating =====
+     PASTE THIS WHOLE BLOCK in index.html, after the last </script> and before </body>. -->
+<script>
+(function(){
+const $$=s=>[...document.querySelectorAll(s)];
+const fn=n=>String(n||'').split(' ')[0];
+const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
+const css=document.createElement('style');
+css.textContent='.fx-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.fx-box{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;font-size:15px}.fx-cancel{background:#fdecea;border:1px solid #f1b5b0;border-radius:14px;padding:14px;margin-top:14px}.fx-stars button{background:none;border:0;font-size:34px;line-height:1;color:#c9c9c9;padding:0 3px}.fx-stars button{color:#f4a000}.fx-stars button:hover~button{color:#c9c9c9}.fx-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.fx-form input,.fx-form select{width:auto;flex:1;min-width:130px}';
+document.head.appendChild(css);
+
+const pairOf=(me,u)=>{ const pairs=DB.get('pairs',{}); const pid=pairId(me.id,u.id); return {pairs,pid,p:pairs[pid]}; };
+const cafeOf=p=>DB.get('cafes',[]).find(c=>c.id===p.cafe)||null;
+const both=(p,a,b)=>!!(p.ok&&p.ok[a]&&p.ok[b]);
+const whereTxt=p=>{ const c=cafeOf(p); return c?' at '+c.name+(c.area?', '+c.area:''):''; };
+const whenTxt=w=>w?fmtDate(w.d)+', '+fmtRange(w.t):'';
+function addEv(p,to,text){ (p.events=p.events||[]).push({id:uid(),to:to,text:text,at:Date.now(),seen:false,sent:false}); }
+const site=()=>' Open '+siteUrl()+' and tap My matches.';
+
+/* ---------- member side: decorate My matches cards ---------- */
+function cancelledHTML(me,u,p,a){
+  const mine=p.cancel.by===me.id;
+  return `<div class="fx-cancel">❌ <b>${mine?'You cancelled':esc(fn(u.name))+' cancelled'} this meetup.</b>${p.cancel.why?'<br>Reason: '+esc(p.cancel.why):''}<div class="fx-row"><button class="btn btn-primary btn-sm" data-fx="again" ${a}>Meet again</button></div></div>`;
+}
+function extrasHTML(me,u,p,a){
+  const c=cafeOf(p), w=whenOf(p,me,u,c), r=p.resched, nm=esc(fn(u.name));
+  const started=w&&new Date(w.d+'T'+w.t+':00').getTime()<Date.now();
+  let h='';
+  if(r){
+    const t=esc(whenTxt(r));
+    h+= r.by===me.id
+      ? `<div class="fx-box">⏳ You asked to move it to <b>${t}</b>. Waiting for ${nm} to reply.<div class="fx-row"><button class="btn btn-ghost btn-sm" data-fx="withdraw" ${a}>Withdraw request</button></div></div>`
+      : `<div class="fx-box">🔁 ${nm} asks to move the meetup to <b>${t}</b>.<div class="fx-row"><button class="btn btn-primary btn-sm" data-fx="accept" ${a}>Accept new time</button><button class="btn btn-ghost btn-sm" data-fx="decline" ${a}>Keep old time</button></div></div>`;
+  } else if(!started){
+    const today=new Date(), max=new Date(); max.setDate(max.getDate()+29);
+    const slots=TIMES.filter(t=>!c||cafeOpenAt(c,t));
+    h+=`<div class="fx-row"><button class="btn btn-ghost btn-sm" data-fx="open" ${a}>Change date or time</button><button class="btn btn-danger btn-sm" data-fx="cancel" ${a}>Cancel meetup</button></div>
+    <div class="fx-form hidden" data-form><input type="date" class="fx-d" min="${isoDate(today)}" max="${isoDate(max)}" aria-label="New date"><select class="fx-t" aria-label="New time">${slots.map(t=>`<option value="${t}">${esc(fmtRange(t))}</option>`).join('')}</select><button class="btn btn-primary btn-sm" data-fx="send" ${a}>Send request</button></div>`;
+  }
+  if(started||(p.checkin&&p.checkin[me.id])){
+    const mine=p.rating&&p.rating[me.id];
+    h+= mine
+      ? `<div class="fx-box">You rated this meetup <b style="color:#f4a000">${stars(mine)}</b></div>`
+      : `<div class="fx-box"><b>How was your coffee with ${nm}?</b><div class="fx-stars">${[1,2,3,4,5].map(n=>`<button type="button" data-fx="rate" data-n="${n}" ${a} aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}</div></div>`;
+  }
+  return h;
+}
+function decorate(){
+  const me=getMe(); if(!me) return;
+  const list=matchesFor(me), cards=$$('#mmBody .match');
+  list.forEach((m,i)=>{
+    const card=cards[i]; if(!card) return;
+    const u=m.u, o=pairOf(me,u), p=o.p; if(!p) return;
+    const a=`data-pid="${o.pid}" data-u="${esc(u.id)}"`;
+    if(both(p,me.id,u.id)) card.insertAdjacentHTML('beforeend',extrasHTML(me,u,p,a));
+    else if(p.cancel && card.lastElementChild) card.lastElementChild.outerHTML=cancelledHTML(me,u,p,a);
+  });
+}
+const _om=openMatches;
+openMatches=function(){ _om.apply(this,arguments); try{ decorate(); }catch(e){ console.error(e); } };
+
+$('#mmBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-fx]'); if(!b) return;
+  const me=getMe(); if(!me) return;
+  const act=b.dataset.fx;
+  if(act==='open'){ b.closest('.match').querySelector('[data-form]').classList.toggle('hidden'); return; }
+  const pairs=DB.get('pairs',{}), p=pairs[b.dataset.pid];
+  const other=DB.get('users',[]).find(x=>x.id===b.dataset.u);
+  if(!p||!other) return;
+  const c=cafeOf(p), w=whenOf(p,me,other,c), my=fn(me.name), their=fn(other.name);
+  const save=msg=>{ DB.set('pairs',pairs); if(msg) toast(msg); openMatches(); };
+  if(act==='send'){
+    const f=b.closest('.match'), d=f.querySelector('.fx-d').value, t=f.querySelector('.fx-t').value;
+    if(!d||!t){ toast('Pick a new date and time.'); return; }
+    if(new Date(d+'T'+t+':00').getTime()<Date.now()+36e5){ toast('Pick a time at least one hour from now.'); return; }
+    p.resched={by:me.id,d:d,t:t,at:Date.now()};
+    addEv(p,other.id,'Hi '+their+', '+my+' would like to change your coffee meetup'+(w?' from '+whenTxt(w):'')+' to '+whenTxt({d:d,t:t})+whereTxt(p)+'. Please accept or decline.'+site());
+    save('Request sent. '+their+' will be told.');
+  }
+  if(act==='accept'){
+    const r=p.resched; if(!r) return;
+    p.checkin=p.checkin||{}; p.checkin._when=r.d+'T'+r.t; p.resched=null;
+    addEv(p,r.by,'Hi '+fn(DB.get('users',[]).find(x=>x.id===r.by).name)+', '+my+' accepted the new time. Your coffee meetup is now on '+whenTxt(r)+whereTxt(p)+'.'+site());
+    save('New time confirmed.');
+  }
+  if(act==='decline'){
+    const r=p.resched; if(!r) return; p.resched=null;
+    addEv(p,r.by,'Hi '+fn(DB.get('users',[]).find(x=>x.id===r.by).name)+', '+my+' could not do the new time, so your meetup stays on '+whenTxt(w)+whereTxt(p)+'. You can cancel or ask for another time.'+site());
+    save('Kept the old time.');
+  }
+  if(act==='withdraw'){ p.resched=null; save('Request withdrawn.'); }
+  if(act==='cancel'){
+    const why=prompt('Cancel this meetup with '+their+'?\nTell us why (optional), then press OK. Press Cancel to keep the meetup.');
+    if(why===null) return;
+    p.cancel={by:me.id,at:Date.now(),why:why.trim().slice(0,200)}; p.ok[me.id]=false; p.resched=null;
+    addEv(p,other.id,'Hi '+their+', '+my+' has cancelled your coffee meetup'+(w?' on '+whenTxt(w):'')+whereTxt(p)+'. Sorry about this. You can choose someone else.'+site());
+    save('Meetup cancelled. '+their+' will be told.');
+  }
+  if(act==='again'){
+    p.cancel=null; p.ok[me.id]=true; p.ok[other.id]=false; p.resched=null;
+    addEv(p,other.id,'Hi '+their+', '+my+' would like to meet you again for coffee. Please tap OK if you agree.'+site());
+    save('Sent. We will tell you when '+their+' replies.');
+  }
+  if(act==='rate'){
+    p.rating=p.rating||{}; p.rating[me.id]=parseInt(b.dataset.n,10);
+    save('Thanks for rating: '+stars(p.rating[me.id]));
+  }
+});
+
+/* ---------- in-app alert for the other member ---------- */
+function checkEvents(){
+  const me=getMe(); if(!me) return;
+  const pairs=DB.get('pairs',{}); let n=0;
+  Object.values(pairs).forEach(p=>(p.events||[]).forEach(e=>{ if(e.to===me.id&&!e.seen){ e.seen=true; n++; } }));
+  if(n){
+    DB.set('pairs',pairs);
+    toast('🔔 Update on your meetup. Tap My matches to see it.');
+    try{ if('Notification' in window&&Notification.permission==='granted') new Notification('Coffee With Stranger',{body:'Update on your meetup. Open My matches.'}); }catch(x){}
+  }
+}
+const _od=onData;
+onData=function(){ _od(); try{ checkEvents(); }catch(e){ console.error(e); } };
+
+/* ---------- admin side: WhatsApp / email alerts and ratings ---------- */
+function pending(){
+  const out=[], users=DB.get('users',[]);
+  Object.entries(DB.get('pairs',{})).forEach(([pid,p])=>(p.events||[]).forEach(e=>{ if(!e.sent){ const u=users.find(x=>x.id===e.to); if(u) out.push({pid:pid,e:e,u:u}); } }));
+  return out;
+}
+function mark(id,key){
+  const pairs=DB.get('pairs',{});
+  Object.values(pairs).forEach(p=>(p.events||[]).forEach(e=>{ if(e.id===id) e[key]=true; }));
+  DB.set('pairs',pairs);
+}
+function alertsPanel(){
+  if(!adminOn) return;
+  const mh=document.getElementById('meetHead'); if(!mh) return;
+  let box=document.getElementById('fxAlerts');
+  if(!box){
+    box=document.createElement('div'); box.id='fxAlerts'; box.className='panel'; box.style.marginTop='20px';
+    mh.parentElement.parentElement.insertBefore(box,mh.parentElement);
+    box.addEventListener('click',e=>{
+      const w=e.target.closest('[data-fxwa]'), d=e.target.closest('[data-fxdone]');
+      if(w) setTimeout(()=>mark(w.dataset.fxwa,'sent'),50);
+      if(d) mark(d.dataset.fxdone,'sent');
+    });
+  }
+  const cm=contactMap(), list=pending();
+  box.innerHTML='<h3>Cancel, reschedule and meetup alerts ('+list.length+' to send)</h3><p style="font-size:14.5px;color:var(--muted);margin-bottom:12px">The member already sees every change inside My matches. Tap WhatsApp to send the same message to their phone. Members with an email are emailed automatically when the auto-send box below is ticked.</p>'
+  + (list.length ? list.map(x=>{
+      const c=cm[x.u.id]||{}, wa=c.phone?'https://wa.me/91'+encodeURIComponent(c.phone)+'?text='+encodeURIComponent(x.e.text):'';
+      return `<div class="req"><b>${esc(x.u.name)}</b> · 📞 ${esc(c.phone||'not loaded')}${x.e.emailed?' · <b>emailed ✓</b>':''}<br><span style="color:var(--muted)">${esc(x.e.text)}</span><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${wa?`<a class="btn btn-primary btn-sm" target="_blank" rel="noopener" data-fxwa="${esc(x.e.id)}" href="${esc(wa)}">WhatsApp</a>`:''}<button class="btn btn-ghost btn-sm" data-fxdone="${esc(x.e.id)}">Mark as sent</button></div></div>`;
+    }).join('') : '<p style="color:var(--muted);font-size:14.5px">Nothing to send.</p>');
+}
+let busy=false;
+async function emailEvents(){
+  if(busy||!adminOn||!EMAILJS_ON()) return; busy=true;
+  try{
+    const cm=contactMap();
+    for(const x of pending()){
+      if(x.e.emailed) continue;
+      const c=cm[x.u.id]; if(!c||!c.email) continue;
+      if(await sendEmail(c.email,fn(x.u.name),'Update on your coffee meetup ☕',x.e.text)){ mark(x.e.id,'emailed'); await sleep(1100); } else break;
+    }
+  } finally { busy=false; }
+}
+const _rm=renderMeetups;
+renderMeetups=function(){
+  _rm.apply(this,arguments);
+  try{
+    if(!adminOn) return;
+    const list=confirmedPairs(), pairs=DB.get('pairs',{});
+    $$('#meetList .req').forEach((el,i)=>{
+      const x=list[i]; if(!x) return;
+      const r=(pairs[x.pid]||{}).rating||{}, f=u=>r[u.id]?`<b style="color:#f4a000">${stars(r[u.id])}</b>${r[u.id]<=2?' ⚠ low':''}`:'not rated yet';
+      el.insertAdjacentHTML('beforeend',`<div style="margin-top:8px;font-size:14.5px">⭐ Ratings given: ${esc(fn(x.a.name))} ${f(x.a)} · ${esc(fn(x.b.name))} ${f(x.b)}</div>`);
+    });
+    alertsPanel();
+    const am=document.getElementById('autoMail'); if(am&&am.checked) emailEvents();
+  }catch(e){ console.error(e); }
+};
+})();
+</script>
